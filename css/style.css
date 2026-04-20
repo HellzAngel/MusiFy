@@ -1296,11 +1296,55 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
    ============================ */
 
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(167,139,250,0.13) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Structured skeleton — card grid */
+.skeleton-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.skeleton-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 0;
+  border: none;
+}
+.skeleton-title {
+  height: 12px;
+  width: 78%;
+  border-radius: 4px;
+}
+.skeleton-artist {
+  height: 10px;
+  width: 52%;
+  border-radius: 4px;
+}
+
+/* Structured skeleton — list rows */
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 30px 44px 1fr 36px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
   border-radius: var(--r-sm);
 }
+.skeleton-num  { height: 11px; border-radius: 4px; }
+.skeleton-thumb { height: 42px; border-radius: 6px; border: none; }
+.skeleton-row-title  { height: 13px; width: 68%; border-radius: 4px; margin-bottom: 6px; }
+.skeleton-row-artist { height: 10px; width: 44%; border-radius: 4px; }
+.skeleton-dur  { height: 10px; border-radius: 4px; }
 
 /* ============================
    RESPONSIVE
