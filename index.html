@@ -309,6 +309,8 @@
   </style>
 </head>
 <body>
+
+
   <!-- Three.js canvas -->
   <canvas id="loginCanvas"></canvas>
   <div class="overlay"></div>
@@ -363,6 +365,7 @@
 
   <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+
 
   <script>
   // =============================================
@@ -564,16 +567,22 @@
   //  LOGIN LOGIC
   // =============================================
 
+  // Passwords stored as SHA-256 hashes only — plaintext never in source
   const USERS = {
-    surya:   { password: 'surya@123',   name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
-    ananthu: { password: 'ananthu@123', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
-    devika:  { password: 'devika@123',  name: 'Devika',  avatar: 'D', color: '#f472b6' },
-    sonu:    { password: 'sonu@123',    name: 'Sonu',    avatar: 'S', color: '#34d399' },
-    bromin:  { password: 'bromin@123',  name: 'Bromin',  avatar: 'B', color: '#f97316' },
-    arjun:   { password: 'arjun@123',   name: 'Arjun',   avatar: 'A', color: '#ef4444' },
-    deva:    { password: 'deva@123',    name: 'Deva',    avatar: 'D', color: '#a855f7' },
-    amal:    { password: 'amal@123',    name: 'Amal',    avatar: 'A', color: '#10b981' }
+    surya:   { ph: '34a12809061e749271ae972328cd38bdd7fe3fc83bcfd5fc922e01dd1c3ba376', name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
+    ananthu: { ph: '77cce19facdc944ca9e5418413862881a33c731ed33f67ff254699f1b9570c77', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
+    devika:  { ph: 'c99bc6f668e8999a380975a9be485150f91070498f11f5bf0d56f67eb0f68930', name: 'Devika',  avatar: 'D', color: '#f472b6' },
+    sonu:    { ph: '65799f51379727f9a584975c238568cd1c570ef0873c10f3d5a546fcbe6073f3', name: 'Sonu',    avatar: 'S', color: '#34d399' },
+    bromin:  { ph: '080b9643325aeb8de8c556420ab27403c28a13ef5a8d40d8fec0bf9adada73a8', name: 'Bromin',  avatar: 'B', color: '#f97316' },
+    arjun:   { ph: '26a95b1e69c92f1cfb0381fd379d80526ecd9c368d3a7baa9be6c24b61a25e71', name: 'Arjun',   avatar: 'A', color: '#ef4444' },
+    deva:    { ph: '55ac2b3161e9c9e2ecb04869ae5e4d6b372f6f1733fede2a06738af09a761c59', name: 'Deva',    avatar: 'D', color: '#a855f7' },
+    amal:    { ph: '24bb9a41fcc4b3db6a3450ed9171b8c23ee9b494659f6ebfb697b30ea83d1fac', name: 'Amal',    avatar: 'A', color: '#10b981' }
   };
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
 
   const form = document.getElementById('loginForm');
   const usernameInput = document.getElementById('username');
@@ -620,7 +629,7 @@
     }`;
   document.head.appendChild(style);
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = usernameInput.value.trim().toLowerCase();
     const password = passwordInput.value;
@@ -630,43 +639,42 @@
 
     loginBtn.classList.add('loading');
 
-    setTimeout(() => {
+    const user = USERS[username];
+    if (!user) {
       loginBtn.classList.remove('loading');
+      showError('User not found.');
+      return;
+    }
 
-      if (!USERS[username]) {
-        showError('User not found. Try: surya or ananthu');
-        return;
-      }
-      if (USERS[username].password !== password) {
-        showError('Incorrect password. Please try again.');
-        return;
-      }
+    const inputHash = await sha256(password);
+    if (inputHash !== user.ph) {
+      loginBtn.classList.remove('loading');
+      showError('Incorrect password. Please try again.');
+      return;
+    }
 
-      // Success — store session & redirect
-      const user = USERS[username];
-      const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
-      if (!existing[username]) existing[username] = { favorites: [] };
-      localStorage.setItem('musify_users', JSON.stringify(existing));
-      sessionStorage.setItem('musify_session', JSON.stringify({
-        username,
-        name: user.name,
-        avatar: user.avatar,
-        color: user.color,
-        loginTime: Date.now()
-      }));
+    // Success — store session & redirect
+    const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
+    if (!existing[username]) existing[username] = { favorites: [] };
+    localStorage.setItem('musify_users', JSON.stringify(existing));
+    sessionStorage.setItem('musify_session', JSON.stringify({
+      username,
+      name: user.name,
+      avatar: user.avatar,
+      color: user.color,
+      loginTime: Date.now()
+    }));
 
-      // Animate card out and redirect
-      document.querySelector('.login-card').style.transition = 'all 0.5s ease';
-      document.querySelector('.login-card').style.transform = 'scale(0.95) translateY(-20px)';
-      document.querySelector('.login-card').style.opacity = '0';
-      document.querySelector('.overlay').style.background = 'rgba(4,4,10,0.98)';
-      document.querySelector('.overlay').style.transition = 'background 0.8s ease';
+    // Animate card out and redirect
+    document.querySelector('.login-card').style.transition = 'all 0.5s ease';
+    document.querySelector('.login-card').style.transform = 'scale(0.95) translateY(-20px)';
+    document.querySelector('.login-card').style.opacity = '0';
+    document.querySelector('.overlay').style.background = 'rgba(4,4,10,0.98)';
+    document.querySelector('.overlay').style.transition = 'background 0.8s ease';
 
-      setTimeout(() => {
-        // Replace current history entry so back-button can't return to login
-        window.location.replace('player.html');
-      }, 600);
-    }, 800);
+    setTimeout(() => {
+      window.location.replace('player.html');
+    }, 600);
   });
   </script>
 </body>

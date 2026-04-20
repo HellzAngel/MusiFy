@@ -575,10 +575,26 @@ function mergeIntoAll(tracks) {
 }
 
 function skeletonCards(n) {
-  return Array(n).fill('<div style="aspect-ratio:1;" class="skeleton"></div>').join('');
+  return Array(n).fill(`
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-cover"></div>
+      <div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-artist"></div>
+      </div>
+    </div>`).join('');
 }
 function skeletonRows(n) {
-  return Array(n).fill('<div style="height:56px;margin-bottom:4px;" class="skeleton"></div>').join('');
+  return Array(n).fill(`
+    <div class="skeleton-row">
+      <div class="skeleton skeleton-num"></div>
+      <div class="skeleton skeleton-thumb"></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+        <div class="skeleton skeleton-row-title"></div>
+        <div class="skeleton skeleton-row-artist"></div>
+      </div>
+      <div class="skeleton skeleton-dur"></div>
+    </div>`).join('');
 }
 
 async function loadHomeSections() {
@@ -846,7 +862,7 @@ async function performSearch(query) {
 
   empty.style.display = 'none';
   noResult.style.display = 'none';
-  results.innerHTML = '<div class="skeleton" style="height:56px;border-radius:8px;margin-bottom:4px;"></div>'.repeat(8);
+  results.innerHTML = skeletonRows(8);
 
   const tracks = await JamendoAPI.searchTracks(query, 60, _searchFilter);
 
