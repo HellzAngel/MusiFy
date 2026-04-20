@@ -209,13 +209,20 @@
 
         <!-- SEARCH VIEW -->
         <div class="view" id="view-search">
-          <h2 class="section-title" style="margin-bottom:20px;">Search</h2>
-          <div class="search-bar" style="max-width:100%;margin-bottom:24px;padding:12px 20px;border-radius:16px;">
+          <h2 class="section-title" style="margin-bottom:16px;">Search</h2>
+          <div class="search-bar" style="max-width:100%;margin-bottom:16px;padding:12px 20px;border-radius:16px;">
             <i class="fas fa-magnifying-glass"></i>
-            <input type="text" id="searchInput" placeholder="Search for songs, artists, albums..." autocomplete="off" style="font-size:16px;" />
+            <input type="text" id="searchInput" placeholder="Search songs, artists, albums, films..." autocomplete="off" style="font-size:16px;" />
             <button class="btn btn-primary" style="padding:8px 20px;border-radius:20px;margin-left:8px;" onclick="doSearch()">
               Search
             </button>
+          </div>
+          <!-- Filter tabs -->
+          <div class="search-filter-tabs" id="searchFilterTabs">
+            <button class="sft active" data-type="song"   onclick="setSearchFilter('song',this)"><i class="fas fa-music"></i> Songs</button>
+            <button class="sft"        data-type="artist" onclick="setSearchFilter('artist',this)"><i class="fas fa-user"></i> Artist</button>
+            <button class="sft"        data-type="album"  onclick="setSearchFilter('album',this)"><i class="fas fa-record-vinyl"></i> Album</button>
+            <button class="sft"        data-type="film"   onclick="setSearchFilter('film',this)"><i class="fas fa-film"></i> Film</button>
           </div>
           <div id="searchResults" class="track-list"></div>
           <div id="searchEmpty" style="text-align:center;padding:60px 20px;display:none;">

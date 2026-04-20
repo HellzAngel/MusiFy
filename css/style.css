@@ -839,6 +839,42 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 }
 
 /* ============================
+   SEARCH FILTER TABS
+   ============================ */
+.search-filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.sft:hover {
+  background: rgba(167,139,250,0.12);
+  border-color: rgba(167,139,250,0.3);
+  color: var(--text-primary);
+}
+.sft.active {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.4);
+}
+
+/* ============================
    HERO BANNER
    ============================ */
 

@@ -795,6 +795,17 @@ async function browseMood(mood) {
 //  SEARCH
 // =============================================
 
+let _searchFilter = 'song';
+
+function setSearchFilter(type, btn) {
+  _searchFilter = type;
+  document.querySelectorAll('.sft').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Re-run search with new filter if there's a query
+  const q = document.getElementById('searchInput').value.trim();
+  if (q) performSearch(q);
+}
+
 let searchDebounce = null;
 document.getElementById('globalSearch').addEventListener('input', function() {
   const q = this.value.trim();
@@ -835,9 +846,9 @@ async function performSearch(query) {
 
   empty.style.display = 'none';
   noResult.style.display = 'none';
-  results.innerHTML = '<div class="skeleton" style="height:56px;border-radius:8px;margin-bottom:4px;"></div>'.repeat(5);
+  results.innerHTML = '<div class="skeleton" style="height:56px;border-radius:8px;margin-bottom:4px;"></div>'.repeat(8);
 
-  const tracks = await JamendoAPI.searchTracks(query, 50);
+  const tracks = await JamendoAPI.searchTracks(query, 60, _searchFilter);
 
   if (tracks.length === 0) {
     results.innerHTML = '';
@@ -845,8 +856,14 @@ async function performSearch(query) {
     return;
   }
 
-  State.queue = [...tracks];
-  State.allTracks.push(...tracks.filter(t => !State.allTracks.find(a => a.id === t.id)));
+  mergeIntoAll(tracks);
+
+  // Queue = search results first, then all other loaded tracks appended
+  // so skipping after search results continues to fresh music instead of looping
+  const searchIds = new Set(tracks.map(t => t.id));
+  const rest = State.allTracks.filter(t => !searchIds.has(t.id));
+  State.queue = [...tracks, ...rest];
+
   results.innerHTML = renderTracksAsList(tracks);
 }
 
@@ -1011,9 +1028,27 @@ function updatePlayButtons(playing) {
 function nextTrack() {
   if (!State.queue.length) return;
   if (State.isShuffled) {
-    State.queueIndex = Math.floor(Math.random() * State.queue.length);
+    // Pick random track that isn't the current one
+    let idx;
+    do { idx = Math.floor(Math.random() * State.queue.length); }
+    while (State.queue.length > 1 && idx === State.queueIndex);
+    State.queueIndex = idx;
   } else {
-    State.queueIndex = (State.queueIndex + 1) % State.queue.length;
+    const next = State.queueIndex + 1;
+    if (next >= State.queue.length) {
+      // End of queue — pull from allTracks that aren't already in queue
+      const qIds = new Set(State.queue.map(t => t.id));
+      const extras = State.allTracks.filter(t => !qIds.has(t.id));
+      if (extras.length) {
+        State.queue.push(...extras);
+      } else {
+        // Nothing new — just wrap
+        State.queueIndex = 0;
+        playTrack(State.queue[0]);
+        return;
+      }
+    }
+    State.queueIndex = next;
   }
   playTrack(State.queue[State.queueIndex]);
 }
