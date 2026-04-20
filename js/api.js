@@ -129,10 +129,38 @@ const JamendoAPI = (function () {
     return tracks || getDemoTracks();
   }
 
-  async function searchTracks(query, limit) {
+  async function searchTracks(query, limit, type) {
     if (!query || !query.trim()) return [];
-    try { return await saavnFetch(query.trim(), limit || 50); }
-    catch (e) { return getDemoTracks(); }
+    const q = query.trim();
+    let queries;
+    if (type === 'artist') {
+      queries = [
+        q + ' songs', q + ' hits', q + ' latest songs',
+        q + ' best songs', q + ' top songs', q + ' all songs',
+      ];
+    } else if (type === 'album') {
+      queries = [
+        q + ' album', q + ' album songs', q + ' full album',
+        q, q + ' songs', q + ' hits',
+      ];
+    } else if (type === 'film') {
+      queries = [
+        q + ' movie songs', q + ' film songs', q + ' audio jukebox',
+        q + ' songs', q + ' bgm', q + ' theme',
+      ];
+    } else {
+      // default: song search
+      queries = [
+        q, q + ' songs', q + ' hits',
+        q + ' latest', q + ' 2025', q + ' best',
+      ];
+    }
+    try {
+      const tracks = await fetchAll(queries, limit || 60);
+      return tracks || [];
+    } catch (e) {
+      return [];
+    }
   }
 
   async function getByGenre(tag, limit) {
