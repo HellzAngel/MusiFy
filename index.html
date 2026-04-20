@@ -658,7 +658,10 @@
       document.querySelector('.overlay').style.background = 'rgba(4,4,10,0.98)';
       document.querySelector('.overlay').style.transition = 'background 0.8s ease';
 
-      setTimeout(() => { window.location.href = 'player.html'; }, 600);
+      setTimeout(() => {
+        // Replace current history entry so back-button can't return to login
+        window.location.replace('player.html');
+      }, 600);
     }, 800);
   });
   </script>
