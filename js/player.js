@@ -5,8 +5,18 @@
 // ---- Auth Guard ----
 (function() {
   const session = sessionStorage.getItem('musify_session');
-  if (!session) { window.location.href = 'index.html'; return; }
-  try { JSON.parse(session); } catch { window.location.href = 'index.html'; }
+  if (!session) { window.location.replace('index.html'); return; }
+  try { JSON.parse(session); } catch { window.location.replace('index.html'); }
+})();
+
+// ---- Back-button trap: keep player in history so back doesn't log out ----
+(function() {
+  // Push an extra state so there's always something to pop back to within this page
+  history.pushState({ musify: true }, '');
+  window.addEventListener('popstate', function(e) {
+    // Re-push so the back button never actually leaves the player
+    history.pushState({ musify: true }, '');
+  });
 })();
 
 // =============================================
