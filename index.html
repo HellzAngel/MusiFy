@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>MusiFy — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --accent: #a78bfa;
+      --accent-dim: rgba(167,139,250,0.12);
+      --font: 'Space Grotesk', sans-serif;
+      --font-display: 'Syne', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: #020208;
+      color: #e8e8f0;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #loginCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 60% 50%, rgba(2,2,8,0.1) 0%, rgba(2,2,8,0.65) 60%, rgba(2,2,8,0.96) 100%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .scene {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      z-index: 2;
+      padding: 0 8vw;
+    }
+
+    /* LOGO */
+    .top-logo {
+      position: fixed;
+      top: 32px; left: 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+    .top-logo-icon {
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--accent);
+    }
+    .top-logo-text {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    /* TAGLINE left side */
+    .login-tagline {
+      position: fixed;
+      left: 8vw;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      pointer-events: none;
+    }
+    .login-tagline h1 {
+      font-family: var(--font-display);
+      font-size: clamp(40px, 5vw, 72px);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      color: rgba(255,255,255,0.08);
+      user-select: none;
+    }
+
+    .corner-text { display: none; }
+    .login-tagline { display: none; }
+    .music-notes { display: none; }
+
+    /* LOGIN CARD */
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(6, 5, 18, 0.8);
+      backdrop-filter: blur(48px);
+      -webkit-backdrop-filter: blur(48px);
+      border: 1px solid rgba(167,139,250,0.12);
+      border-radius: 20px;
+      padding: 52px 44px;
+      position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+      animation: cardAppear 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes cardAppear {
+      from { opacity: 0; transform: translateX(40px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Subtle accent line top */
+    .login-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 40px; right: 40px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+      border-radius: 1px;
+    }
+
+    /* LOGO AREA */
+    .card-logo {
+      margin-bottom: 40px;
+    }
+    .card-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .card-sub {
+      font-size: 14px;
+      color: rgba(255,255,255,0.35);
+      font-weight: 400;
+    }
+
+    /* FORM */
+    .login-form { display: flex; flex-direction: column; gap: 18px; }
+
+    .form-group { position: relative; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .form-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .form-input-icon {
+      position: absolute;
+      left: 16px;
+      color: rgba(167,139,250,0.5);
+      font-size: 14px;
+      z-index: 1;
+    }
+    .form-input {
+      width: 100%;
+      padding: 14px 16px 14px 44px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px;
+      color: #e8e8f0;
+      font-family: var(--font);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .form-input::placeholder { color: rgba(255,255,255,0.18); }
+    .form-input:focus {
+      border-color: rgba(167,139,250,0.4);
+      background: rgba(167,139,250,0.05);
+      box-shadow: 0 0 0 3px rgba(167,139,250,0.08);
+    }
+    .form-input.error {
+      border-color: rgba(239,68,68,0.5);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 14px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.25);
+      cursor: pointer;
+      font-size: 14px;
+      transition: color 0.2s;
+      padding: 4px;
+    }
+    .toggle-password:hover { color: rgba(255,255,255,0.6); }
+
+    /* ERROR MSG */
+    .error-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.18);
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.3s ease;
+    }
+    .error-msg.visible { opacity: 1; transform: translateY(0); }
+
+    /* SUBMIT BUTTON */
+    .login-btn {
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: #0a0818;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      margin-top: 6px;
+      letter-spacing: 0.3px;
+    }
+    .login-btn:hover {
+      background: #c4b5fd;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(167,139,250,0.35);
+    }
+    .login-btn:active { transform: translateY(0); }
+    .login-btn.loading { pointer-events: none; opacity: 0.7; }
+    .login-btn-text { transition: all 0.3s; }
+    .login-btn.loading .login-btn-text { opacity: 0; }
+    .login-spinner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    .login-btn.loading .login-spinner { opacity: 1; }
+    .login-spinner i { animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* FLOATING MUSIC NOTES */
+    .music-notes {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      overflow: hidden;
+    }
+    .note {
+      position: absolute;
+      font-size: 18px;
+      opacity: 0;
+      animation: floatNote linear infinite;
+      color: rgba(167,139,250,0.25);
+    }
+    @keyframes floatNote {
+      0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+      10% { opacity: 1; }
+      90% { opacity: 0.4; }
+      100% { opacity: 0; transform: translateY(-100vh) rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .scene { justify-content: center; padding: 20px; }
+      .login-tagline { display: none; }
+      .login-card { max-width: 380px; padding: 40px 28px; }
+      .top-logo { left: 20px; top: 20px; }
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 36px 24px; border-radius: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Three.js canvas -->
+  <canvas id="loginCanvas"></canvas>
+  <div class="overlay"></div>
+
+  <!-- Top logo -->
+  <div class="top-logo">
+    <div class="top-logo-icon"><i class="fas fa-headphones"></i></div>
+    <span class="top-logo-text">MusiFy</span>
+  </div>
+
+  <!-- Login scene -->
+  <div class="scene">
+    <div class="login-card">
+      <div class="card-logo">
+        <div class="card-eyebrow">Welcome back</div>
+        <div class="card-title">Sign in to<br/>MusiFy</div>
+        <div class="card-sub">Tamil & Malayalam music, all free</div>
+      </div>
+
+      <form class="login-form" id="loginForm" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="form-input-wrap">
+            <i class="fas fa-user form-input-icon"></i>
+            <input type="text" id="username" class="form-input" placeholder="Enter username" autocomplete="username" spellcheck="false" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="form-input-wrap">
+            <i class="fas fa-lock form-input-icon"></i>
+            <input type="password" id="password" class="form-input" placeholder="Enter password" autocomplete="current-password" />
+            <button type="button" class="toggle-password" id="togglePass">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="error-msg" id="errorMsg">
+          <i class="fas fa-circle-exclamation"></i>
+          <span id="errorText">Invalid username or password</span>
+        </div>
+
+        <button type="submit" class="login-btn" id="loginBtn">
+          <span class="login-btn-text"><i class="fas fa-arrow-right-to-bracket" style="margin-right:8px;"></i>Sign In</span>
+          <div class="login-spinner"><i class="fas fa-circle-notch"></i></div>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+
+  <script>
+  // =============================================
+  //  THREE.JS INTERACTIVE LOGIN BACKGROUND
+  // =============================================
+
+  (function() {
+    const canvas = document.getElementById('loginCanvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x04040a, 1);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 3;
+
+    // ---- Starfield ----
+    const starCount = 2500;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      starPositions[i * 3]     = (Math.random() - 0.5) * 20;
+      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+      // Color variation: purple to cyan
+      const t = Math.random();
+      starColors[i * 3]     = 0.3 + t * 0.5;  // R
+      starColors[i * 3 + 1] = 0.1 + t * 0.7;  // G
+      starColors[i * 3 + 2] = 0.5 + t * 0.5;  // B
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    const starMat = new THREE.PointsMaterial({
+      size: 0.025,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.7,
+      sizeAttenuation: true
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // ---- Particle Sphere ----
+    const PARTICLE_COUNT = 1800;
+    const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
+    const basePositions = new Float32Array(PARTICLE_COUNT * 3);
+    const particleColors = new Float32Array(PARTICLE_COUNT * 3);
+    const randomOffsets = new Float32Array(PARTICLE_COUNT);
+    const RADIUS = 1.5;
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      // Golden ratio sphere distribution
+      const phi = Math.acos(1 - 2 * (i + 0.5) / PARTICLE_COUNT);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const x = RADIUS * Math.sin(phi) * Math.cos(theta);
+      const y = RADIUS * Math.sin(phi) * Math.sin(theta);
+      const z = RADIUS * Math.cos(phi);
+
+      particlePositions[i * 3]     = x;
+      particlePositions[i * 3 + 1] = y;
+      particlePositions[i * 3 + 2] = z;
+      basePositions[i * 3]     = x;
+      basePositions[i * 3 + 1] = y;
+      basePositions[i * 3 + 2] = z;
+      randomOffsets[i] = Math.random() * Math.PI * 2;
+
+      // Purple to cyan gradient based on Y position
+      const t = (y + RADIUS) / (2 * RADIUS);
+      particleColors[i * 3]     = 0.35 + t * 0.2;   // R
+      particleColors[i * 3 + 1] = 0.1 + t * 0.72;   // G
+      particleColors[i * 3 + 2] = 0.6 + t * 0.35;   // B
+    }
+
+    const sphereGeo = new THREE.BufferGeometry();
+    sphereGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    sphereGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    const sphereMat = new THREE.PointsMaterial({
+      size: 0.018,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      sizeAttenuation: true
+    });
+    const sphere = new THREE.Points(sphereGeo, sphereMat);
+    scene.add(sphere);
+
+    // ---- Inner glow sphere ----
+    const glowGeo = new THREE.SphereGeometry(1.45, 32, 32);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x8b5cf6,
+      transparent: true,
+      opacity: 0.03,
+      wireframe: false
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    scene.add(glowMesh);
+
+    // ---- Mouse tracking ----
+    const mouse = { x: 0, y: 0 };
+    const targetRotation = { x: 0, y: 0 };
+    const currentRotation = { x: 0, y: 0 };
+
+    document.addEventListener('mousemove', (e) => {
+      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
+    });
+
+    // Touch support
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        mouse.x = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
+        mouse.y = -(e.touches[0].clientY / window.innerHeight - 0.5) * 2;
+      }
+    }, { passive: true });
+
+    // ---- Resize ----
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ---- Animation ----
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
+
+      // Smooth rotation toward mouse
+      targetRotation.x = mouse.y * 0.5;
+      targetRotation.y = mouse.x * 0.8;
+      currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
+      currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
+
+      sphere.rotation.x = currentRotation.x;
+      sphere.rotation.y = currentRotation.y + elapsed * 0.12;
+
+      glowMesh.rotation.y = elapsed * 0.1;
+      stars.rotation.y = elapsed * 0.01;
+      stars.rotation.x = elapsed * 0.005;
+
+      // Pulse particle sphere positions
+      const positions = sphereGeo.attributes.position.array;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const offset = randomOffsets[i];
+        const wave = Math.sin(elapsed * 0.8 + offset) * 0.04;
+        const bx = basePositions[i * 3];
+        const by = basePositions[i * 3 + 1];
+        const bz = basePositions[i * 3 + 2];
+        const len = Math.sqrt(bx * bx + by * by + bz * bz);
+        positions[i * 3]     = bx + (bx / len) * wave;
+        positions[i * 3 + 1] = by + (by / len) * wave;
+        positions[i * 3 + 2] = bz + (bz / len) * wave;
+      }
+      sphereGeo.attributes.position.needsUpdate = true;
+
+      // ---- Auto color cycle — shift hue across all particles ----
+      const cols = sphereGeo.attributes.color.array;
+      // 5 palette hues that blend smoothly: violet, cyan, pink, green, blue
+      const HUES = [0.76, 0.54, 0.92, 0.38, 0.62];
+      const cycleDur = 6; // seconds per palette step
+      const palPos  = (elapsed / cycleDur) % HUES.length;
+      const palIdx  = Math.floor(palPos) % HUES.length;
+      const palNext = (palIdx + 1) % HUES.length;
+      const palBlend = palPos - Math.floor(palPos);
+      let dh = HUES[palNext] - HUES[palIdx];
+      if (dh >  0.5) dh -= 1;
+      if (dh < -0.5) dh += 1;
+      const baseHue = ((HUES[palIdx] + dh * palBlend) + 1) % 1;
+
+      const tmpColor = new THREE.Color();
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        // each particle gets a slight hue offset so the orb shimmers
+        const hue = (baseHue + i * 0.0003 + Math.sin(elapsed * 0.4 + i * 0.07) * 0.04 + 1) % 1;
+        const sat = 0.75 + Math.sin(elapsed * 0.6 + i * 0.05) * 0.10;
+        const lit = 0.55 + Math.sin(elapsed * 0.9 + i * 0.11) * 0.12;
+        tmpColor.setHSL(hue, sat, lit);
+        cols[i * 3]     = tmpColor.r;
+        cols[i * 3 + 1] = tmpColor.g;
+        cols[i * 3 + 2] = tmpColor.b;
+      }
+      sphereGeo.attributes.color.needsUpdate = true;
+
+      // Also shift glow to match
+      glowMat.color.setHSL(baseHue, 0.80, 0.60);
+
+      // Pulse glow
+      glowMat.opacity = 0.02 + Math.sin(elapsed * 1.5) * 0.015;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  })();
+
+  // =============================================
+  //  LOGIN LOGIC
+  // =============================================
+
+  const USERS = {
+    surya:   { password: 'surya@123',   name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
+    ananthu: { password: 'ananthu@123', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
+    devika:  { password: 'devika@123',  name: 'Devika',  avatar: 'D', color: '#f472b6' },
+    sonu:    { password: 'sonu@123',    name: 'Sonu',    avatar: 'S', color: '#34d399' }
+  };
+
+  const form = document.getElementById('loginForm');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+  const errorMsg = document.getElementById('errorMsg');
+  const errorText = document.getElementById('errorText');
+  const loginBtn = document.getElementById('loginBtn');
+  const togglePass = document.getElementById('togglePass');
+
+  // Toggle password visibility
+  togglePass.addEventListener('click', () => {
+    const isPass = passwordInput.type === 'password';
+    passwordInput.type = isPass ? 'text' : 'password';
+    togglePass.querySelector('i').className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+  });
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorMsg.classList.add('visible');
+    usernameInput.classList.add('error');
+    passwordInput.classList.add('error');
+    loginBtn.style.animation = 'shake 0.4s ease';
+    setTimeout(() => loginBtn.style.animation = '', 400);
+  }
+
+  function hideError() {
+    errorMsg.classList.remove('visible');
+    usernameInput.classList.remove('error');
+    passwordInput.classList.remove('error');
+  }
+
+  usernameInput.addEventListener('input', hideError);
+  passwordInput.addEventListener('input', hideError);
+
+  // Shake animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      20%{transform:translateX(-8px)}
+      40%{transform:translateX(8px)}
+      60%{transform:translateX(-5px)}
+      80%{transform:translateX(5px)}
+    }`;
+  document.head.appendChild(style);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = usernameInput.value.trim().toLowerCase();
+    const password = passwordInput.value;
+
+    if (!username) { showError('Please enter your username'); return; }
+    if (!password) { showError('Please enter your password'); return; }
+
+    loginBtn.classList.add('loading');
+
+    setTimeout(() => {
+      loginBtn.classList.remove('loading');
+
+      if (!USERS[username]) {
+        showError('User not found. Try: surya or ananthu');
+        return;
+      }
+      if (USERS[username].password !== password) {
+        showError('Incorrect password. Please try again.');
+        return;
+      }
+
+      // Success — store session & redirect
+      const user = USERS[username];
+      const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
+      if (!existing[username]) existing[username] = { favorites: [] };
+      localStorage.setItem('musify_users', JSON.stringify(existing));
+      sessionStorage.setItem('musify_session', JSON.stringify({
+        username,
+        name: user.name,
+        avatar: user.avatar,
+        color: user.color,
+        loginTime: Date.now()
+      }));
+
+      // Animate card out and redirect
+      document.querySelector('.login-card').style.transition = 'all 0.5s ease';
+      document.querySelector('.login-card').style.transform = 'scale(0.95) translateY(-20px)';
+      document.querySelector('.login-card').style.opacity = '0';
+      document.querySelector('.overlay').style.background = 'rgba(4,4,10,0.98)';
+      document.querySelector('.overlay').style.transition = 'background 0.8s ease';
+
+      setTimeout(() => { window.location.href = 'player.html'; }, 600);
+    }, 800);
+  });
+  </script>
+</body>
+</html>
