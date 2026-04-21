@@ -1473,7 +1473,10 @@ function closeDropdownOnOutside(e) {
 }
 
 function toggleTheme() {
-  document.body.style.filter = document.body.style.filter ? '' : 'hue-rotate(40deg)';
+  const isLight = document.body.classList.toggle('light-theme');
+  localStorage.setItem('musify_theme', isLight ? 'light' : 'dark');
+  const label = document.getElementById('themeLabel');
+  if (label) label.textContent = isLight ? 'Dark Theme' : 'Light Theme';
   document.getElementById('profileDropdown').classList.remove('open');
 }
 
@@ -1558,6 +1561,12 @@ function showToast(msg, type = 'info', icon = null) {
 // =============================================
 
 async function init() {
+  // Restore saved theme before anything renders
+  if (localStorage.getItem('musify_theme') === 'light') {
+    document.body.classList.add('light-theme');
+    const label = document.getElementById('themeLabel');
+    if (label) label.textContent = 'Dark Theme';
+  }
   initUser();
   checkMobile();
   switchView('home', document.querySelector('[data-view="home"]'));

@@ -95,151 +95,15 @@
     }
 
     /* ═══════════════════════════════════
-       LEFT PANEL  (branding / hero)
-    ═══════════════════════════════════ */
-    .left-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 40px 48px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* subtle vignette so the canvas shows through */
-    .left-panel::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(135deg,
-        rgba(2,2,8,0.55) 0%,
-        rgba(10,8,30,0.30) 60%,
-        transparent 100%);
-      pointer-events: none;
-    }
-
-    .lp-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-    }
-    .lp-logo-icon {
-      width: 42px; height: 42px;
-      background: linear-gradient(135deg, #7c3aed, #2563eb);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; color: #fff;
-      box-shadow: 0 6px 20px rgba(124,58,237,0.4);
-    }
-    .lp-logo-text {
-      font-family: var(--font-d);
-      font-size: 24px; font-weight: 800;
-      letter-spacing: -0.5px; color: #fff;
-    }
-
-    .lp-hero {
-      position: relative; z-index: 1;
-    }
-    .lp-badge {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 5px 14px;
-      background: rgba(167,139,250,0.12);
-      border: 1px solid rgba(167,139,250,0.25);
-      border-radius: 30px;
-      font-size: 11px; font-weight: 600;
-      letter-spacing: 1.5px; text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 22px;
-    }
-    .lp-badge i { font-size: 10px; animation: pulse 2s ease infinite; }
-    @keyframes pulse {
-      0%,100% { opacity:1; transform: scale(1); }
-      50%      { opacity:0.5; transform: scale(0.8); }
-    }
-    .lp-heading {
-      font-family: var(--font-d);
-      font-size: clamp(38px, 4.5vw, 72px);
-      font-weight: 800;
-      line-height: 1.04;
-      letter-spacing: -2px;
-      color: #fff;
-      margin-bottom: 18px;
-    }
-    .lp-heading span {
-      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      background-size: 200% auto;
-      animation: gradShift 4s linear infinite;
-    }
-    @keyframes gradShift {
-      0%   { background-position: 0% center; }
-      100% { background-position: 200% center; }
-    }
-    .lp-sub {
-      font-size: 15px;
-      color: rgba(255,255,255,0.42);
-      line-height: 1.6;
-      max-width: 380px;
-    }
-
-    /* language pills */
-    .lp-langs {
-      display: flex; gap: 10px; flex-wrap: wrap;
-      margin-top: 28px;
-    }
-    .lang-pill {
-      display: flex; align-items: center; gap: 6px;
-      padding: 7px 14px;
-      border-radius: 30px;
-      font-size: 12px; font-weight: 600;
-      border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.04);
-      color: rgba(255,255,255,0.6);
-      backdrop-filter: blur(8px);
-      transition: all 0.25s ease;
-    }
-    .lang-pill:hover {
-      background: rgba(167,139,250,0.12);
-      border-color: rgba(167,139,250,0.3);
-      color: var(--accent);
-    }
-
-    .lp-footer {
-      position: relative; z-index: 1;
-      font-size: 12px;
-      color: rgba(255,255,255,0.2);
-    }
-
-    /* wave bars decoration */
-    .lp-wave-bars {
-      display: flex; align-items: flex-end;
-      gap: 3px; height: 32px;
-      margin-bottom: 20px;
-    }
-    .wb {
-      width: 3px; border-radius: 2px;
-      background: linear-gradient(to top, var(--accent), var(--accent2));
-      animation: waveBar 1.2s ease-in-out infinite;
-      opacity: 0.6;
-    }
-    @keyframes waveBar {
-      0%,100% { transform: scaleY(0.3); }
-      50%      { transform: scaleY(1); }
-    }
-
-    /* ═══════════════════════════════════
        RIGHT PANEL  (login card)
     ═══════════════════════════════════ */
     .right-panel {
-      width: 500px;
-      flex-shrink: 0;
+      width: 100%;
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px 44px;
+      padding: 32px 24px;
       background: transparent;
       position: relative;
     }
@@ -270,9 +134,10 @@
       animation: orbDrift3 10s ease-in-out infinite;
     }
 
-    /* ── glass card ── */
+    /* ── glass card — capped width so it stays elegant on wide screens —— */
     .login-card {
       width: 100%;
+      max-width: 460px;
       position: relative;
       z-index: 1;
       /* gradient-glass: works regardless of stacking-context */
@@ -503,12 +368,7 @@
        RESPONSIVE
     ═══════════════════════════════════ */
     @media (max-width: 860px) {
-      .left-panel { display: none; }
-      .right-panel {
-        width: 100%;
-        padding: 28px 24px;
-        background: transparent;
-      }
+      .right-panel { padding: 28px 20px; }
       .right-panel .orb-inner .ri-1 { width: 340px; height: 340px; top: -80px; right: -80px; }
       .right-panel .orb-inner .ri-2 { width: 280px; height: 280px; bottom: -60px; left: -60px; }
       .right-panel .orb-inner .ri-3 { top: 55%; left: 30%; }
@@ -533,60 +393,10 @@
     <div class="orb orb-4"></div>
   </div>
 
-  <!-- Full-page split layout -->
+  <!-- Full-page centered layout -->
   <div class="page-wrap">
 
-    <!-- LEFT: branding panel -->
-    <div class="left-panel">
-      <!-- logo -->
-      <div class="lp-logo">
-        <div class="lp-logo-icon"><i class="fas fa-headphones"></i></div>
-        <span class="lp-logo-text">MusiFy</span>
-      </div>
-
-      <!-- hero copy -->
-      <div class="lp-hero">
-        <div class="lp-badge">
-          <i class="fas fa-circle" style="color:#6ee7b7;font-size:7px;"></i>
-          Free · No Ads · Always On
-        </div>
-        <h1 class="lp-heading">
-          Your Music,<br/><span>Every Language.</span>
-        </h1>
-        <p class="lp-sub">
-          Stream Tamil, Malayalam, Hindi &amp; English hits.<br/>
-          Smart radio, infinite playback, zero cost.
-        </p>
-
-        <!-- animated wave bars -->
-        <div class="lp-wave-bars" style="margin-top:32px;">
-          <div class="wb" style="height:40%;animation-delay:0s;"></div>
-          <div class="wb" style="height:70%;animation-delay:0.1s;"></div>
-          <div class="wb" style="height:55%;animation-delay:0.2s;"></div>
-          <div class="wb" style="height:90%;animation-delay:0.3s;"></div>
-          <div class="wb" style="height:65%;animation-delay:0.15s;"></div>
-          <div class="wb" style="height:80%;animation-delay:0.25s;"></div>
-          <div class="wb" style="height:50%;animation-delay:0.05s;"></div>
-          <div class="wb" style="height:100%;animation-delay:0.35s;"></div>
-          <div class="wb" style="height:60%;animation-delay:0.18s;"></div>
-          <div class="wb" style="height:45%;animation-delay:0.28s;"></div>
-          <div class="wb" style="height:75%;animation-delay:0.08s;"></div>
-          <div class="wb" style="height:85%;animation-delay:0.22s;"></div>
-        </div>
-
-        <!-- language pills -->
-        <div class="lp-langs">
-          <div class="lang-pill"><span>🎵</span> Tamil</div>
-          <div class="lang-pill"><span>🎶</span> Malayalam</div>
-          <div class="lang-pill"><span>🎸</span> Hindi</div>
-          <div class="lang-pill"><span>🎤</span> English</div>
-        </div>
-      </div>
-
-      <div class="lp-footer">© 2026 MusiFy · All rights reserved</div>
-    </div>
-
-    <!-- RIGHT: login card -->
+    <!-- login card (centered full-page) -->
     <div class="right-panel">
       <!-- orbs behind the glass card -->
       <div class="orb-inner">
