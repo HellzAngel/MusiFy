@@ -478,33 +478,120 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   overflow: hidden;
   background: var(--bg-3);
   border: 1px solid var(--border);
-  transition: var(--ease);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.25s ease;
 }
+
+/* Glaze layer — prismatic light sweep, sits BEHIND card content */
+.track-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--r);
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255,255,255,0.08) 38%,
+    rgba(167,139,250,0.22) 43%,
+    rgba(103,232,249,0.15) 48%,
+    rgba(249,168,212,0.13) 53%,
+    rgba(255,255,255,0.06) 58%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 0.25s ease, background-position 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  pointer-events: none;
+}
+.track-card:hover::before {
+  opacity: 1;
+  background-position: -40% 0;
+}
+.track-card:active::before {
+  background-position: 0% 0;
+  opacity: 1;
+  transition: background-position 0.1s ease;
+}
+
+/* Keep all real content above the glaze layer */
+.track-card-cover,
+.track-card-info {
+  position: relative;
+  z-index: 1;
+}
+
 .track-card:hover {
-  border-color: var(--border-accent);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  border-color: rgba(167,139,250,0.45);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(167,139,250,0.2),
+    0 0 28px rgba(167,139,250,0.15),
+    inset 0 0 0 1px rgba(103,232,249,0.08);
+}
+
+.track-card:active {
+  transform: translateY(-1px) scale(0.985);
+  box-shadow: 0 4px 20px rgba(167,139,250,0.25);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .track-card-cover {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  position: relative;
   background: var(--bg-3);
+  position: relative;
 }
 .track-card-cover img {
   width: 100%; height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94), filter 0.3s ease;
   display: block;
 }
-.track-card:hover .track-card-cover img { transform: scale(1.06); }
+.track-card:hover .track-card-cover img {
+  transform: scale(1.08);
+  filter: brightness(1.08) saturate(1.15);
+}
+
+/* Prismatic glaze directly on the album art image */
+.track-card-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    120deg,
+    transparent 15%,
+    rgba(255,255,255,0.04) 30%,
+    rgba(167,139,250,0.28) 40%,
+    rgba(103,232,249,0.22) 48%,
+    rgba(249,168,212,0.20) 56%,
+    rgba(255,255,255,0.06) 64%,
+    transparent 78%
+  );
+  background-size: 280% 100%;
+  background-position: 220% 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-position 0.55s cubic-bezier(0.25,0.46,0.45,0.94);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+.track-card:hover .track-card-cover::after {
+  opacity: 1;
+  background-position: -50% 0;
+}
+.track-card:active .track-card-cover::after {
+  background-position: 10% 0;
+  opacity: 1;
+  transition: background-position 0.08s ease;
+}
 
 .track-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 55%, transparent 100%);
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
@@ -587,9 +674,47 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   padding: 8px 10px;
   border-radius: var(--r-sm);
   cursor: pointer;
-  transition: var(--ease-fast);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
-.track-list-item:hover { background: var(--bg-card-hover); }
+
+/* Glaze sweep on list items — z-index 0 so content stays on top */
+.track-list-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    105deg,
+    transparent 25%,
+    rgba(167,139,250,0.11) 42%,
+    rgba(103,232,249,0.09) 50%,
+    rgba(249,168,212,0.08) 58%,
+    transparent 72%
+  );
+  background-size: 220% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-position 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+  pointer-events: none;
+}
+.track-list-item:hover::before {
+  opacity: 1;
+  background-position: -30% 0;
+}
+/* All direct children sit above the glaze */
+.track-list-item > * { position: relative; z-index: 1; }
+
+.track-list-item:hover {
+  background: var(--bg-card-hover);
+  box-shadow: inset 0 0 0 1px rgba(167,139,250,0.12);
+}
+.track-list-item:active {
+  transform: scale(0.992);
+  transition: transform 0.07s ease;
+}
 .track-list-item.playing {
   background: var(--accent-dim);
   border: 1px solid rgba(167,139,250,0.15);
