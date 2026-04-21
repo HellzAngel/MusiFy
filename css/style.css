@@ -160,6 +160,8 @@ body.light-theme .ctrl-btn:hover { color: var(--text-1); background: rgba(0,0,0,
 body.light-theme .ctrl-btn.active { color: var(--accent); }
 body.light-theme .play-pause-btn { color: #fff; }
 body.light-theme .player-fav-btn { color: var(--text-3); }
+body.light-theme .player-fav-btn.active { color: var(--accent-pink); }
+body.light-theme .player-fav-btn:hover  { color: var(--accent-pink); }
 body.light-theme #miniOrbCanvas { border-color: rgba(124,58,237,0.18); }
 
 /* Hero banner */
@@ -509,7 +511,10 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   height: 100vh;
   overflow: hidden;
   position: relative;
-  z-index: 1;
+  /* No z-index here — setting z-index:1 creates a stacking context that
+     traps the sidebar (z-index:220) below the body-level backdrop (z-index:210),
+     making sidebar nav items un-tappable on mobile. The bgParticles canvas
+     has pointer-events:none so it never needs to be below #app. */
 }
 
 /* --- SIDEBAR --- */
@@ -618,6 +623,51 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   font-weight: 700;
   color: var(--accent);
   flex-shrink: 0;
+}
+
+/* ── Animated avatar ── */
+@keyframes avatarSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes avatarPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.75; }
+}
+.avatar-orb {
+  position: relative;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+  /* spinning conic-gradient ring */
+  background: conic-gradient(from 0deg, #a78bfa, #67e8f9, #f9a8d4, #a78bfa);
+  padding: 2px;
+  animation: avatarSpin 3s linear infinite;
+}
+.avatar-orb:hover { animation-duration: 1.2s; }
+.avatar-inner {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: var(--av-color, linear-gradient(135deg, #7c3aed, #4f46e5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  /* stop the inner content from spinning with the ring */
+  animation: avatarSpin 3s linear infinite reverse;
+}
+.avatar-orb:hover .avatar-inner { animation-duration: 1.2s; }
+.avatar-letter {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  user-select: none;
+}
+body.light-theme .avatar-orb {
+  background: conic-gradient(from 0deg, #7c3aed, #0891b2, #db2777, #7c3aed);
 }
 .user-info { flex:1; min-width:0; }
 .user-name { font-size:13px; font-weight:600; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1189,7 +1239,129 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   letter-spacing: 0.3px;
 }
 
-.lang-card { min-height: 140px; }
+/* ── Language cards — glass redesign ── */
+.lang-card {
+  min-height: 168px;
+  /* Remove solid gradient — glass instead */
+  background:
+    linear-gradient(135deg,
+      rgba(255,255,255,0.07) 0%,
+      rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-top-color: rgba(255,255,255,0.22);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.14);
+  gap: 8px;
+  padding: 26px 16px 22px;
+}
+/* Subtle accent colour bleed from --c1 in top-left corner */
+.lang-card::before {
+  background: linear-gradient(135deg, var(--c1) 0%, transparent 55%);
+  opacity: 0.13;
+}
+/* Coloured accent stripe at bottom */
+.lang-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  border-radius: 0 0 18px 18px;
+  opacity: 0.9;
+  z-index: 1;
+  pointer-events: none;
+}
+.lang-card:hover {
+  border-color: rgba(255,255,255,0.22);
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(255,255,255,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.20);
+}
+/* Shiny sweep on hover */
+.lang-card .lc-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255,255,255,0.18) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: background-position 0.55s ease, opacity 0.2s ease;
+}
+.lang-card:hover .lc-shine {
+  opacity: 1;
+  background-position: -20% 0;
+}
+
+/* Gradient icon badge */
+.lc-icon-wrap {
+  width: 58px; height: 58px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    0 6px 20px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1), box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+.lc-icon-wrap svg {
+  width: 28px; height: 28px;
+  display: block;
+  overflow: visible;
+}
+.browse-card:hover .lc-icon-wrap {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+/* Light theme glass overrides */
+body.light-theme .lang-card {
+  background: rgba(255,255,255,0.72);
+  border-color: rgba(0,0,0,0.07);
+  border-top-color: rgba(255,255,255,0.95);
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.09),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+}
+body.light-theme .lang-card::before { opacity: 0.06; }
+body.light-theme .lang-card .browse-card-name { color: var(--text-1); }
+body.light-theme .lang-card .browse-card-sub  { color: var(--text-2); }
+body.light-theme .lang-card:hover {
+  border-color: rgba(0,0,0,0.12);
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.14),
+    0 0 0 1px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.95);
+}
+body.light-theme .lang-card .lc-shine {
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255,255,255,0.45) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-position: 200% 0;
+}
+
 .mood-card { min-height: 120px; }
 .genre-card2 { min-height: 110px; }
 
@@ -1437,6 +1609,8 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 .hb-stat {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 2px;
 }
 .hb-stat-num {
@@ -1445,6 +1619,26 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
   font-weight: 800;
   color: #fff;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+}
+/* Syne has no ∞ glyph — falls back to system font and mis-sizes.
+   Force Space Grotesk which handles it consistently, then scale to match. */
+.hb-stat-num[data-sym="inf"] {
+  font-family: var(--font);
+  font-size: 26px;
+  font-weight: 400;
+  transform: scaleX(1.1);
+  height: 24px;
+  line-height: 1;
+}
+.hb-stat-accent {
+  background: linear-gradient(90deg, #a78bfa, #67e8f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .hb-stat-lbl {
   font-size: 10px;
@@ -1788,6 +1982,119 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
   }
 }
 .profile-dropdown.open { display:block; animation: fadeIn 0.2s ease; }
+
+/* ============================
+   SIGN OUT MODAL
+   ============================ */
+
+.signout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.signout-modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.signout-modal {
+  background: rgba(10,8,24,0.98);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 20px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow:
+    0 24px 64px rgba(0,0,0,0.75),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  transform: scale(0.88) translateY(12px);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.signout-modal-overlay.open .signout-modal {
+  transform: scale(1) translateY(0);
+}
+.signout-modal-icon {
+  width: 58px; height: 58px;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.28);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px;
+  font-size: 22px;
+  color: #f87171;
+}
+.signout-modal-title {
+  font-family: var(--font-d);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 10px;
+}
+.signout-modal-msg {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-bottom: 26px;
+}
+.signout-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+.signout-cancel {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--ease-fast);
+}
+.signout-cancel:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-1);
+  border-color: var(--border-accent);
+}
+.signout-confirm {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--ease-fast);
+  box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+}
+.signout-confirm:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(239,68,68,0.45);
+}
+body.light-theme .signout-modal {
+  background: rgba(255,255,255,0.99);
+  border-color: rgba(0,0,0,0.10);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06);
+}
+body.light-theme .signout-cancel { color: var(--text-2); }
+body.light-theme .signout-cancel:hover { background: var(--bg-card-hover); color: var(--text-1); }
+
 .dropdown-header {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
@@ -1831,7 +2138,18 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
   transform: translateY(100%);
   transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
 }
-.now-playing-panel.open { transform: translateY(0); }
+.now-playing-panel.open { transform: translateY(0); overflow: hidden; }
+
+#mainOrbCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
 
 .npp-close {
   position: absolute;
@@ -1847,6 +2165,7 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
   font-size: 16px;
   cursor: pointer;
   transition: var(--ease-fast);
+  z-index: 2;
 }
 .npp-close:hover { background: var(--bg-card-hover); color: var(--text-1); }
 
@@ -1858,8 +2177,9 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
-#mainOrbCanvas {
+#nppSphereCanvas {
   width: 300px;
   height: 300px;
   display: block;
@@ -1878,7 +2198,7 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
 }
 .npp-art-disc.spinning { animation: spin 8s linear infinite; }
 
-.npp-info { text-align:center; margin-bottom: 20px; }
+.npp-info { text-align:center; margin-bottom: 20px; position: relative; z-index: 2; }
 .npp-title {
   font-family: var(--font-d);
   font-size: 24px;
@@ -1888,7 +2208,7 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
 }
 .npp-artist { color: var(--text-2); font-size: 15px; }
 
-.npp-controls { width:100%; max-width:380px; }
+.npp-controls { width:100%; max-width:380px; position: relative; z-index: 2; }
 
 /* ============================
    MOBILE NAV
@@ -1996,7 +2316,7 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.45);
     z-index: 210;
     /* NO backdrop-filter — it composites above sidebar in mobile browsers */
   }
@@ -2006,12 +2326,22 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
     transform: translateX(-100%);
     width: 260px;
     z-index: 220;       /* must be above the backdrop */
+    /* Solid background — no backdrop-filter on mobile (breaks touch events on children) */
+    background: #09071a;
+    border-right: 1px solid rgba(167,139,250,0.12);
     transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-    overflow: visible;  /* allow profile dropdown to escape sidebar bounds */
+    overflow: hidden;
   }
   .sidebar.mobile-open {
     transform: translateX(0);
-    box-shadow: 20px 0 60px rgba(0,0,0,0.8);
+    box-shadow: 12px 0 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.08);
+  }
+  body.light-theme .sidebar {
+    background: #f2f4fc;
+    border-right: 1px solid rgba(0,0,0,0.08);
+  }
+  body.light-theme .sidebar-backdrop {
+    background: rgba(0,0,0,0.28);
   }
 
   .main-content { margin-left:0; }
@@ -2065,6 +2395,7 @@ body.light-theme .hb-eq span { background: linear-gradient(to top, #7c3aed, #089
   .hb-title { font-size: 28px; }
   .hb-stats { gap: 12px; }
   .hb-stat-num { font-size: 17px; }
+  .hb-stat-num[data-sym="inf"] { font-size: 22px; }
   .hero-title { font-size: 26px; }
   .hero-waves { display:none; }
   .track-list-item { grid-template-columns: 44px 1fr auto auto; }

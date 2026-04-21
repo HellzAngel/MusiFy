@@ -156,21 +156,49 @@ function _getFreq() {
 })();
 
 // =============================================
-//  THREE.JS MAIN ORB (Now Playing — Morphing Sphere + Particles)
+//  SHARED PALETTE HELPERS
 // =============================================
 
-(function initMainOrb() {
-  const canvas = document.getElementById('mainOrbCanvas');
+const _ORB_PALETTES = [
+  [0.76, 0.54, 0.88],
+  [0.54, 0.76, 0.35],
+  [0.88, 0.96, 0.76],
+  [0.35, 0.54, 0.76],
+  [0.05, 0.88, 0.54],
+];
+const _PALETTE_DUR = 8;
+function _lerpHue(a, b, t) {
+  let d = b - a;
+  if (d >  0.5) d -= 1;
+  if (d < -0.5) d += 1;
+  return (a + d * t + 1) % 1;
+}
+function _getPalette(t) {
+  const mix     = (t % (_PALETTE_DUR * _ORB_PALETTES.length)) / _PALETTE_DUR;
+  const ci      = Math.floor(mix) % _ORB_PALETTES.length;
+  const ni      = (ci + 1) % _ORB_PALETTES.length;
+  const bl      = mix - Math.floor(mix);
+  const c = _ORB_PALETTES[ci], n = _ORB_PALETTES[ni];
+  return [_lerpHue(c[0],n[0],bl), _lerpHue(c[1],n[1],bl), _lerpHue(c[2],n[2],bl)];
+}
+
+// =============================================
+//  THREE.JS SPHERE ORB (nppSphereCanvas — 300×300)
+// =============================================
+
+(function initSphereOrb() {
+  const canvas = document.getElementById('nppSphereCanvas');
   if (!canvas) return;
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
   renderer.setClearColor(0x000000, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  const scene = new THREE.Scene();
+  renderer.setSize(300, 300, false);
+
+  const scene  = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
   camera.position.z = 3.2;
 
-  // ---- Morphing sphere ----
-  const geo = new THREE.IcosahedronGeometry(1.0, 5);
+  const geo     = new THREE.IcosahedronGeometry(1.0, 5);
   const origPos = geo.attributes.position.array.slice();
   const mat = new THREE.MeshPhongMaterial({
     color: new THREE.Color(0x0d0626),
@@ -181,152 +209,166 @@ function _getFreq() {
   const sphere = new THREE.Mesh(geo, mat);
   scene.add(sphere);
 
-  // ---- Wireframe overlay ----
-  const wireMat = new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.10 });
+  const wireMat   = new THREE.MeshBasicMaterial({ color: 0xa78bfa, wireframe: true, transparent: true, opacity: 0.10 });
   const wireframe = new THREE.Mesh(new THREE.IcosahedronGeometry(1.05, 3), wireMat);
   scene.add(wireframe);
 
-  // ---- Particle cloud ----
-  const PC = 1400;
-  const pGeo = new THREE.BufferGeometry();
-  const pPos = new Float32Array(PC * 3);
-  const pPhase = new Float32Array(PC), pRadius = new Float32Array(PC);
-  const pSpeed = new Float32Array(PC), pTheta = new Float32Array(PC), pPhi = new Float32Array(PC);
-  for (let i = 0; i < PC; i++) {
-    pPhase[i]  = Math.random() * Math.PI * 2;
-    pRadius[i] = 1.8 + Math.random() * 5.5;
-    pSpeed[i]  = 0.04 + Math.random() * 0.14;
-    pTheta[i]  = Math.random() * Math.PI * 2;
-    pPhi[i]    = Math.acos(2 * Math.random() - 1);
-  }
-  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-  const pMat = new THREE.PointsMaterial({ color: 0xa78bfa, size: 0.030, transparent: true, opacity: 0.70, sizeAttenuation: true });
-  scene.add(new THREE.Points(pGeo, pMat));
-
-  // ---- Lights ----
   scene.add(new THREE.AmbientLight(0x0d0026, 4));
-  const pLight1 = new THREE.PointLight(0xa78bfa, 6, 14);
-  scene.add(pLight1);
-  const pLight2 = new THREE.PointLight(0x67e8f9, 4, 12);
-  scene.add(pLight2);
-  const pLight3 = new THREE.PointLight(0xf472b6, 3, 10);
-  scene.add(pLight3);
-  // no glow sphere — removed
+  const pL1 = new THREE.PointLight(0xa78bfa, 6, 14); scene.add(pL1);
+  const pL2 = new THREE.PointLight(0x67e8f9, 4, 12); scene.add(pL2);
+  const pL3 = new THREE.PointLight(0xf472b6, 3, 10); scene.add(pL3);
 
-  function resize() {
-    const s = Math.min(canvas.offsetWidth || 300, 420);
-    renderer.setSize(s, s, false);
-  }
-  resize();
-  window.addEventListener('resize', resize);
+  let lBass = 0, lMid = 0, lTreble = 0;
 
-  // ---- Auto color palette — cycle smoothly through hues ----
-  // Each palette is [sphereHue, particleHue, glowHue]
-  const PALETTES = [
-    [0.76, 0.54, 0.88],  // violet → cyan → pink
-    [0.54, 0.76, 0.35],  // cyan → violet → green
-    [0.88, 0.96, 0.76],  // pink → red-pink → cyan
-    [0.35, 0.54, 0.76],  // green → cyan → violet
-    [0.05, 0.88, 0.54],  // orange → pink → cyan
-  ];
-  let paletteIdx = 0, paletteMix = 0;
-  const PALETTE_DURATION = 8; // seconds per palette
-
-  let lastBass = 0, lastMid = 0, lastTreble = 0, lastAvg = 0;
-
-  function lerpHue(a, b, t) {
-    // shortest-path hue interpolation
-    let d = b - a;
-    if (d >  0.5) d -= 1;
-    if (d < -0.5) d += 1;
-    return (a + d * t + 1) % 1;
-  }
-
-  function animateMain() {
-    requestAnimationFrame(animateMain);
+  (function animateSphere() {
+    requestAnimationFrame(animateSphere);
     if (!State.nowPlayingOpen) return;
     const t = performance.now() / 1000;
-
-    // ---- Freq analysis ----
     const freq = _getFreq();
-    let bass, mid, treble, avg;
-    if (freq) { bass = freq.bass; mid = freq.mid; treble = freq.treble; avg = freq.avg; }
-    else {
-      bass   = 0.07 + Math.sin(t * 0.75) * 0.04;
-      mid    = 0.05 + Math.sin(t * 1.10) * 0.03;
-      treble = 0.03 + Math.sin(t * 1.80) * 0.02;
-      avg    = (bass + mid + treble) / 3;
-    }
-    lastBass   += (bass   - lastBass)   * 0.08;
-    lastMid    += (mid    - lastMid)    * 0.08;
-    lastTreble += (treble - lastTreble) * 0.08;
-    lastAvg    += (avg    - lastAvg)    * 0.08;
+    let bass, mid, treble;
+    if (freq) { bass = freq.bass; mid = freq.mid; treble = freq.treble; }
+    else { bass = 0.07+Math.sin(t*.75)*.04; mid = 0.05+Math.sin(t*1.1)*.03; treble = 0.03+Math.sin(t*1.8)*.02; }
+    lBass   += (bass   - lBass)   * 0.08;
+    lMid    += (mid    - lMid)    * 0.08;
+    lTreble += (treble - lTreble) * 0.08;
 
-    // ---- Auto palette cycling ----
-    paletteMix = (t % (PALETTE_DURATION * PALETTES.length)) / PALETTE_DURATION;
-    const curIdx  = Math.floor(paletteMix) % PALETTES.length;
-    const nextIdx = (curIdx + 1) % PALETTES.length;
-    const blend   = paletteMix - Math.floor(paletteMix);
-    const curP  = PALETTES[curIdx];
-    const nextP = PALETTES[nextIdx];
-    const hSphere = lerpHue(curP[0], nextP[0], blend);
-    const hPart   = lerpHue(curP[1], nextP[1], blend);
-    const hGlow   = lerpHue(curP[2], nextP[2], blend);
-
-    // ---- Soft vertex morphing (reduced, dreamy) ----
+    const [hS, hP, hG] = _getPalette(t);
     const pos = geo.attributes.position;
     for (let i = 0; i < pos.count; i++) {
-      const ox = origPos[i*3], oy = origPos[i*3+1], oz = origPos[i*3+2];
-      const len = Math.sqrt(ox*ox + oy*oy + oz*oz);
-      const nx = ox/len, ny = oy/len, nz = oz/len;
-      const n1 = Math.sin(nx*3 + t*0.9) * Math.cos(ny*3 + t*1.1);
-      const n2 = Math.sin(nx*5 + t*1.4) * Math.cos(nz*5 + t*1.2) * 0.5;
-      // much softer deformation — max 0.12 vs old 0.28
-      const d = lastBass * 0.12 * ((n1+1)*0.5) + lastMid * 0.07 * ((n2+1)*0.5);
-      pos.setXYZ(i, ox + nx * d, oy + ny * d, oz + nz * d);
+      const ox=origPos[i*3], oy=origPos[i*3+1], oz=origPos[i*3+2];
+      const len=Math.sqrt(ox*ox+oy*oy+oz*oz);
+      const nx=ox/len, ny=oy/len, nz=oz/len;
+      const n1=Math.sin(nx*3+t*.9)*Math.cos(ny*3+t*1.1);
+      const n2=Math.sin(nx*5+t*1.4)*Math.cos(nz*5+t*1.2)*.5;
+      const d=lBass*.12*((n1+1)*.5)+lMid*.07*((n2+1)*.5);
+      pos.setXYZ(i, ox+nx*d, oy+ny*d, oz+nz*d);
     }
     pos.needsUpdate = true;
     geo.computeVertexNormals();
 
-    // ---- Smooth rotation ----
-    sphere.rotation.y = t * 0.18;
-    sphere.rotation.x = Math.sin(t * 0.22) * 0.14;
-    wireframe.rotation.y = sphere.rotation.y * 1.15;
-    wireframe.rotation.x = -sphere.rotation.x * 0.8;
-
-    // ---- Gentle bass pulse ----
-    const sc = 1 + lastBass * 0.05;
+    sphere.rotation.y    = t*.18;
+    sphere.rotation.x    = Math.sin(t*.22)*.14;
+    wireframe.rotation.y = sphere.rotation.y*1.15;
+    wireframe.rotation.x = -sphere.rotation.x*.8;
+    const sc = 1+lBass*.05;
     sphere.scale.setScalar(sc);
-    wireframe.scale.setScalar(sc + 0.02);
+    wireframe.scale.setScalar(sc+.02);
 
-    // ---- Auto color — sphere ----
-    mat.emissive.setHSL(hSphere, 0.80, 0.30 + lastBass * 0.12);
-    mat.emissiveIntensity = 0.80 + lastBass * 1.0;
-    mat.specular.setHSL((hSphere + 0.10) % 1, 0.9, 0.80);
+    mat.emissive.setHSL(hS, .80, .30+lBass*.12);
+    mat.emissiveIntensity = .80+lBass*1.0;
+    mat.specular.setHSL((hS+.10)%1, .9, .80);
+    wireMat.color.setHSL(hP, .85, .70);
 
-    // ---- Auto color — wireframe ----
-    wireMat.color.setHSL(hPart, 0.85, 0.70);
+    const lr=3;
+    pL1.position.set(Math.sin(t*.45)*lr, Math.cos(t*.32)*lr, Math.sin(t*.67)*lr);
+    pL2.position.set(Math.cos(t*.38)*lr, Math.sin(t*.55)*lr, Math.cos(t*.58)*lr);
+    pL3.position.set(Math.cos(t*.28)*lr, Math.sin(t*.20)*lr, Math.sin(t*.48)*lr);
+    pL1.color.setHSL(hS,.85,.65); pL2.color.setHSL(hP,.85,.65); pL3.color.setHSL(hG,.85,.65);
+    pL1.intensity=5+lBass*6; pL2.intensity=3+lTreble*4; pL3.intensity=2+lMid*3;
 
-    // ---- Orbiting lights with matching hues ----
-    const lr = 3;
-    pLight1.position.set(Math.sin(t * 0.45) * lr, Math.cos(t * 0.32) * lr, Math.sin(t * 0.67) * lr);
-    pLight2.position.set(Math.cos(t * 0.38) * lr, Math.sin(t * 0.55) * lr, Math.cos(t * 0.58) * lr);
-    pLight3.position.set(Math.cos(t * 0.28) * lr, Math.sin(t * 0.20) * lr, Math.sin(t * 0.48) * lr);
-    pLight1.color.setHSL(hSphere, 0.85, 0.65);
-    pLight2.color.setHSL(hPart,   0.85, 0.65);
-    pLight3.color.setHSL(hGlow,   0.85, 0.65);
-    pLight1.intensity = 5 + lastBass * 6;
-    pLight2.intensity = 3 + lastTreble * 4;
-    pLight3.intensity = 2 + lastMid * 3;
+    renderer.render(scene, camera);
+  })();
+})();
 
-    // ---- Particles ----
-    const beatMult = 1 + lastAvg * 1.5;
+// =============================================
+//  THREE.JS PARTICLE FIELD (mainOrbCanvas — fullscreen)
+// =============================================
+
+(function initParticleField() {
+  const canvas = document.getElementById('mainOrbCanvas');
+  if (!canvas) return;
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 200);
+  camera.position.z = 18;
+
+  const PC = 600;
+  const pGeo    = new THREE.BufferGeometry();
+  const pPos    = new Float32Array(PC * 3);
+  const pPhase  = new Float32Array(PC);
+  const pRadius = new Float32Array(PC);
+  const pSpeed  = new Float32Array(PC);
+  const pTheta  = new Float32Array(PC);
+  const pPhi    = new Float32Array(PC);
+  for (let i = 0; i < PC; i++) {
+    pPhase[i]  = Math.random() * Math.PI * 2;
+    pRadius[i] = 3 + Math.random() * 28;
+    pSpeed[i]  = 0.015 + Math.random() * 0.06;
+    pTheta[i]  = Math.random() * Math.PI * 2;
+    pPhi[i]    = Math.acos(2 * Math.random() - 1);
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+
+  // ShaderMaterial — soft glowing disc drawn in fragment shader via gl_PointCoord
+  const pMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor:   { value: new THREE.Color(0xa78bfa) },
+      uSize:    { value: 120.0 },
+      uOpacity: { value: 0.85 },
+    },
+    vertexShader: `
+      uniform float uSize;
+      void main() {
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = uSize / -mv.z;
+        gl_Position  = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3  uColor;
+      uniform float uOpacity;
+      void main() {
+        vec2  uv   = gl_PointCoord - 0.5;
+        float dist = length(uv);
+        if (dist > 0.5) discard;
+        float core = 1.0 - smoothstep(0.0,  0.18, dist);
+        float halo = 1.0 - smoothstep(0.18, 0.50, dist);
+        float a    = core * 1.0 + halo * 0.55;
+        a = clamp(a, 0.0, 1.0) * uOpacity;
+        gl_FragColor = vec4(uColor, a);
+      }
+    `,
+    transparent: true,
+    depthWrite:  false,
+    blending:    THREE.AdditiveBlending,
+  });
+  scene.add(new THREE.Points(pGeo, pMat));
+
+  function resize() {
+    const panel = document.getElementById('nowPlayingPanel');
+    const W = panel ? panel.offsetWidth  || window.innerWidth  : window.innerWidth;
+    const H = panel ? panel.offsetHeight || window.innerHeight : window.innerHeight;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H, false);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  let lAvg = 0, lBass = 0;
+
+  (function animateParticles() {
+    requestAnimationFrame(animateParticles);
+    if (!State.nowPlayingOpen) return;
+    const t = performance.now() / 1000;
+    const freq = _getFreq();
+    let avg, bass;
+    if (freq) { avg = freq.avg; bass = freq.bass; }
+    else { avg = 0.05+Math.sin(t*.9)*.03; bass = 0.07+Math.sin(t*.75)*.04; }
+    lAvg  += (avg  - lAvg)  * 0.08;
+    lBass += (bass - lBass) * 0.08;
+
+    const [hS, hP] = _getPalette(t);
+    const beatMult = 1 + lAvg * 1.5;
     const ppa = pGeo.attributes.position;
     for (let i = 0; i < PC; i++) {
       pPhase[i] += pSpeed[i] * 0.006 * beatMult;
-      const r = pRadius[i] * (1 + lastBass * 0.28 * Math.sin(pPhase[i] * 2));
+      const r     = pRadius[i] * (1 + lBass * 0.3 * Math.sin(pPhase[i] * 2));
       const theta = pTheta[i] + pPhase[i];
-      const phi   = pPhi[i] + Math.sin(t * 0.22 + i * 0.01) * 0.14;
+      const phi   = pPhi[i]   + Math.sin(t * 0.2 + i * 0.01) * 0.12;
       ppa.setXYZ(i,
         r * Math.sin(phi) * Math.cos(theta),
         r * Math.sin(phi) * Math.sin(theta),
@@ -334,12 +376,10 @@ function _getFreq() {
       );
     }
     ppa.needsUpdate = true;
-    pMat.color.setHSL(hPart, 0.85, 0.72);
-    pMat.size = 0.022 + lastAvg * 0.024;
-
+    pMat.uniforms.uColor.value.setHSL(hS, 0.90, 0.70);
+    pMat.uniforms.uSize.value  = 120 + lAvg * 60;
     renderer.render(scene, camera);
-  }
-  animateMain();
+  })();
 })();
 
 // =============================================
@@ -348,13 +388,20 @@ function _getFreq() {
 
 function initUser() {
   const { name, avatar, username, color } = State.session;
-  const avatarEl = document.getElementById('sidebarAvatar');
-  const nameEl   = document.getElementById('sidebarName');
-  const topAvatar = document.getElementById('topbarAvatar');
+  const orbColor = color || '#7c3aed';
+  const orbColor2 = orbColor + 'bb';
 
-  if (avatarEl) { avatarEl.textContent = avatar || '?'; avatarEl.style.background = `linear-gradient(135deg, ${color || '#8b5cf6'}, ${color ? color + '88' : '#6d28d9'})`; }
-  if (nameEl)   nameEl.textContent = name || 'User';
-  if (topAvatar){ topAvatar.textContent = avatar || '?'; topAvatar.style.background = `linear-gradient(135deg, ${color || '#8b5cf6'}, ${color ? color + '88' : '#6d28d9'})`; }
+  const setAvatar = (letterId, innerId) => {
+    const l = document.getElementById(letterId);
+    const i = document.getElementById(innerId);
+    if (l) l.textContent = avatar || '?';
+    if (i) i.style.background = `linear-gradient(135deg, ${orbColor}, ${orbColor2})`;
+  };
+  setAvatar('sidebarAvatarLetter', 'sidebarAvatarInner');
+  setAvatar('topbarAvatarLetter',  'topbarAvatarInner');
+
+  const nameEl = document.getElementById('sidebarName');
+  if (nameEl) nameEl.textContent = name || 'User';
 
   document.getElementById('ddName').textContent = name || '—';
   document.getElementById('ddUser').textContent = username || '—';
@@ -1486,7 +1533,22 @@ function toggleTheme() {
 }
 
 function logout() {
-  if (!confirm('Sign out of MusiFy?')) return;
+  const overlay = document.getElementById('signoutModal');
+  if (overlay) {
+    overlay.classList.add('open');
+    closeProfileDropdown();
+  } else {
+    sessionStorage.removeItem('musify_session');
+    window.location.href = 'index.html';
+  }
+}
+
+function closeSignoutModal() {
+  const overlay = document.getElementById('signoutModal');
+  if (overlay) overlay.classList.remove('open');
+}
+
+function confirmLogout() {
   sessionStorage.removeItem('musify_session');
   window.location.href = 'index.html';
 }

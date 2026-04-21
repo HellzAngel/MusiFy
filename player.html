@@ -21,6 +21,21 @@
   <!-- Toast Notifications -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <!-- Sign Out Confirmation Modal -->
+  <div class="signout-modal-overlay" id="signoutModal" onclick="closeSignoutModal()">
+    <div class="signout-modal" onclick="event.stopPropagation()">
+      <div class="signout-modal-icon">
+        <i class="fas fa-right-from-bracket"></i>
+      </div>
+      <div class="signout-modal-title">Sign Out?</div>
+      <div class="signout-modal-msg">You'll be returned to the login screen. Your favorites and preferences are saved locally.</div>
+      <div class="signout-modal-actions">
+        <button class="signout-cancel" onclick="closeSignoutModal()">Cancel</button>
+        <button class="signout-confirm" onclick="confirmLogout()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Profile Dropdown — fixed, outside sidebar to avoid overflow/stacking issues -->
   <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
     <div class="dropdown-header">
@@ -75,7 +90,11 @@
 
       <!-- User in sidebar -->
       <div class="sidebar-user" id="sidebarUser" onclick="toggleProfileDropdown()">
-        <div class="user-avatar" id="sidebarAvatar">?</div>
+        <div class="avatar-orb" id="sidebarAvatar">
+          <div class="avatar-inner" id="sidebarAvatarInner">
+            <span class="avatar-letter" id="sidebarAvatarLetter">?</span>
+          </div>
+        </div>
         <div class="user-info">
           <div class="user-name" id="sidebarName">Loading...</div>
           <div class="user-plan">Free Plan</div>
@@ -103,7 +122,11 @@
             <i class="fas fa-wave-square"></i>
           </button>
           <div style="position:relative;">
-            <div class="user-avatar" id="topbarAvatar" style="cursor:pointer;" onclick="toggleProfileDropdown()" title="Profile">?</div>
+            <div class="avatar-orb" id="topbarAvatar" style="cursor:pointer;" onclick="toggleProfileDropdown()" title="Profile">
+            <div class="avatar-inner" id="topbarAvatarInner">
+              <span class="avatar-letter" id="topbarAvatarLetter">?</span>
+            </div>
+          </div>
           </div>
         </div>
       </header>
@@ -121,17 +144,9 @@
             <div class="hb-orb hb-orb-3"></div>
 
             <div class="hero-content">
-              <!-- eyebrow pills -->
-              <div class="hb-pills">
-                <span class="hb-pill"><i class="fas fa-circle" style="color:#6ee7b7;font-size:7px;"></i> Live</span>
-                <span class="hb-pill">Tamil</span>
-                <span class="hb-pill">Malayalam</span>
-                <span class="hb-pill">Hindi</span>
-                <span class="hb-pill">English</span>
-              </div>
 
               <!-- title -->
-              <div class="hb-title">Your Music,<br/><span class="hb-gradient">Every Language.</span></div>
+              <div class="hb-title"><span class="hb-gradient">Your Music,</span><br/><span class="hb-gradient">Every Language.</span></div>
               <div class="hb-sub">Smart radio · Infinite playback · Zero cost</div>
 
               <!-- actions -->
@@ -146,11 +161,20 @@
 
               <!-- stats strip -->
               <div class="hb-stats">
-                <div class="hb-stat"><span class="hb-stat-num">4</span><span class="hb-stat-lbl">Languages</span></div>
+                <div class="hb-stat">
+                  <span class="hb-stat-num hb-stat-accent">4</span>
+                  <span class="hb-stat-lbl">Languages</span>
+                </div>
                 <div class="hb-stat-divider"></div>
-                <div class="hb-stat"><span class="hb-stat-num">∞</span><span class="hb-stat-lbl">Songs</span></div>
+                <div class="hb-stat">
+                  <span class="hb-stat-num hb-stat-accent" data-sym="inf">∞</span>
+                  <span class="hb-stat-lbl">Songs</span>
+                </div>
                 <div class="hb-stat-divider"></div>
-                <div class="hb-stat"><span class="hb-stat-num">0₹</span><span class="hb-stat-lbl">Cost</span></div>
+                <div class="hb-stat">
+                  <span class="hb-stat-num hb-stat-accent">Free</span>
+                  <span class="hb-stat-lbl">Always</span>
+                </div>
               </div>
             </div>
 
@@ -179,30 +203,80 @@
               <h2 class="browse-section-title">Languages</h2>
             </div>
             <div class="browse-cards-grid browse-cards-4">
+
+              <!-- Tamil -->
               <div class="browse-card lang-card" style="--c1:#7c3aed;--c2:#2563eb;" onclick="browseLanguage('ta')">
-                <div class="browse-card-icon">🎵</div>
+                <div class="lc-shine"></div>
+                <div class="lc-icon-wrap">
+                  <!-- Veena: body + neck + resonator + frets -->
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="12" cy="20" rx="6.5" ry="4.5" fill="white" opacity="0.95"/>
+                    <rect x="11" y="3" width="2" height="17" rx="1" fill="white" opacity="0.85"/>
+                    <ellipse cx="12" cy="4" rx="3.5" ry="2.8" fill="white" opacity="0.72"/>
+                    <line x1="10.5" y1="9"  x2="13.5" y2="9"  stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
+                    <line x1="10.5" y1="12" x2="13.5" y2="12" stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
+                    <line x1="10.5" y1="15" x2="13.5" y2="15" stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
+                  </svg>
+                </div>
                 <div class="browse-card-name">Tamil</div>
-                <div class="browse-card-sub">தமிழ் இசை</div>
+                <div class="browse-card-sub">Classical · Film · Folk</div>
                 <div class="browse-card-glow"></div>
               </div>
+
+              <!-- Malayalam -->
               <div class="browse-card lang-card" style="--c1:#0891b2;--c2:#6d28d9;" onclick="browseLanguage('ml')">
-                <div class="browse-card-icon">🎶</div>
+                <div class="lc-shine"></div>
+                <div class="lc-icon-wrap">
+                  <!-- Chenda: horizontal drum + sticks -->
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="9" width="14" height="7" rx="1.5" fill="white" opacity="0.9"/>
+                    <ellipse cx="5"  cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
+                    <ellipse cx="19" cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
+                    <line x1="8"  y1="3" x2="6"  y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.85"/>
+                    <line x1="16" y1="3" x2="18" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.85"/>
+                  </svg>
+                </div>
                 <div class="browse-card-name">Malayalam</div>
-                <div class="browse-card-sub">മലയാളം</div>
+                <div class="browse-card-sub">Classical · Melody · Fusion</div>
                 <div class="browse-card-glow"></div>
               </div>
+
+              <!-- Hindi -->
               <div class="browse-card lang-card" style="--c1:#f59e0b;--c2:#dc2626;" onclick="browseLanguage('hi')">
-                <div class="browse-card-icon">🎸</div>
+                <div class="lc-shine"></div>
+                <div class="lc-icon-wrap">
+                  <!-- Sitar: pear body + long neck + upper gourd -->
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="12" cy="20.5" rx="6" ry="3.5" fill="white" opacity="0.95"/>
+                    <ellipse cx="12" cy="16"   rx="3.5" ry="2.5" fill="white" opacity="0.65"/>
+                    <path d="M12 5 Q13 10 12.5 17" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85"/>
+                    <ellipse cx="12" cy="5.5" rx="3" ry="2.2" fill="white" opacity="0.72"/>
+                    <path d="M12 3.5 Q10 2.5 10.5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+                  </svg>
+                </div>
                 <div class="browse-card-name">Hindi</div>
-                <div class="browse-card-sub">हिंदी संगीत</div>
+                <div class="browse-card-sub">Bollywood · Pop · Classical</div>
                 <div class="browse-card-glow"></div>
               </div>
+
+              <!-- English -->
               <div class="browse-card lang-card" style="--c1:#10b981;--c2:#1d4ed8;" onclick="browseLanguage('en')">
-                <div class="browse-card-icon">🎤</div>
+                <div class="lc-shine"></div>
+                <div class="lc-icon-wrap">
+                  <!-- Studio microphone -->
+                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="white" opacity="0.95"/>
+                    <line x1="8.5" y1="8"  x2="15.5" y2="8"  stroke="rgba(0,0,0,0.2)" stroke-width="0.8" fill="none"/>
+                    <line x1="8.5" y1="11" x2="15.5" y2="11" stroke="rgba(0,0,0,0.2)" stroke-width="0.8" fill="none"/>
+                    <rect x="10.5" y="14.5" width="3" height="5" rx="1.5" fill="white" opacity="0.82"/>
+                    <path d="M7 21.5 Q12 18.5 17 21.5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.72"/>
+                  </svg>
+                </div>
                 <div class="browse-card-name">English</div>
-                <div class="browse-card-sub">Global Hits</div>
+                <div class="browse-card-sub">Pop · Rock · Global</div>
                 <div class="browse-card-glow"></div>
               </div>
+
             </div>
           </div>
 
@@ -397,11 +471,14 @@
 
   <!-- NOW PLAYING FULL PANEL -->
   <div class="now-playing-panel" id="nowPlayingPanel">
+    <!-- Fullscreen particle field — sits behind all content -->
+    <canvas id="mainOrbCanvas"></canvas>
+
     <button class="npp-close" onclick="toggleNowPlaying()"><i class="fas fa-chevron-down"></i></button>
 
-    <!-- 3D Audio-Reactive Orb -->
+    <!-- 3D Audio-Reactive Orb sphere -->
     <div class="npp-orb-wrap">
-      <canvas id="mainOrbCanvas" width="300" height="300"></canvas>
+      <canvas id="nppSphereCanvas" width="300" height="300"></canvas>
     </div>
 
     <div class="npp-info">
@@ -582,5 +659,6 @@
       });
     })();
   </script>
+
 </body>
 </html>
