@@ -42,6 +42,10 @@ const State = {
   trendingTracks: [],
   newTracks: null,
   currentView: 'home',
+  // Smart Radio: Spotify-like — tracks fetched based on the song played from search
+  smartRadio: { active: false, lang: null, tracks: [], index: 0, fetching: false },
+  // Playback history stack — stores actual played tracks in order so prev always works
+  playHistory: [],
 };
 
 // =============================================
@@ -498,13 +502,54 @@ function renderTracksAsList(tracks) {
   return html;
 }
 
+// =============================================
+//  SMART RADIO (Spotify-like auto queue)
+// =============================================
+
+function activateSmartRadio(track) {
+  const sr = State.smartRadio;
+  sr.active = true;
+  sr.lang = track.lang;
+  sr.tracks = [];
+  sr.index = 0;
+  sr.fetching = true;
+
+  JamendoAPI.getSimilarTracks(track, 40).then(similar => {
+    sr.tracks = similar.filter(t => t.id !== track.id);
+    sr.index = 0;
+    mergeIntoAll(sr.tracks);
+    sr.fetching = false;
+    showToast('Smart Radio ready — similar songs queued', 'info', 'fa-radio');
+  }).catch(() => {
+    // Fallback: pick from already-loaded tracks of same language
+    sr.tracks = State.allTracks
+      .filter(t => t.lang === track.lang && t.id !== track.id)
+      .sort(() => Math.random() - 0.5);
+    sr.fetching = false;
+  });
+}
+
+function deactivateSmartRadio() {
+  State.smartRadio.active = false;
+  State.smartRadio.tracks = [];
+}
+
 function handleListItemClick(el) {
   const listId = el.dataset.list;
   const index = parseInt(el.dataset.index, 10);
   const queue = _listQueues[listId] || State.queue;
   State.queue = queue;
   State.queueIndex = index;
-  playTrack(queue[index]);
+  const track = queue[index];
+
+  // Activate Spotify-like smart radio when playing from search results
+  if (State.currentView === 'search' && track) {
+    activateSmartRadio(track);
+  } else {
+    deactivateSmartRadio();
+  }
+
+  playTrack(track);
 }
 
 function toggleFavoriteById(trackId) {
@@ -671,6 +716,7 @@ async function loadMoreFeatured() {
 }
 
 function playAllFeatured() {
+  deactivateSmartRadio();
   if (State.allFeatured && State.allFeatured.length) {
     State.queue = [...State.allFeatured];
     State.queueIndex = 0;
@@ -864,7 +910,7 @@ async function performSearch(query) {
   noResult.style.display = 'none';
   results.innerHTML = skeletonRows(8);
 
-  const tracks = await JamendoAPI.searchTracks(query, 60, _searchFilter);
+  const tracks = await JamendoAPI.searchTracks(query, 120, _searchFilter);
 
   if (tracks.length === 0) {
     results.innerHTML = '';
@@ -874,13 +920,62 @@ async function performSearch(query) {
 
   mergeIntoAll(tracks);
 
-  // Queue = search results first, then all other loaded tracks appended
-  // so skipping after search results continues to fresh music instead of looping
+  // Queue = search results first, then all other loaded tracks
   const searchIds = new Set(tracks.map(t => t.id));
   const rest = State.allTracks.filter(t => !searchIds.has(t.id));
   State.queue = [...tracks, ...rest];
 
   results.innerHTML = renderTracksAsList(tracks);
+
+  // Background: pad the queue with 100+ related tracks so playback never stops
+  _padQueueInBackground(tracks[0], searchIds);
+}
+
+// Silently fetch more tracks and append to State.queue so playback has infinite fuel
+async function _padQueueInBackground(seedTrack, existingIds) {
+  if (!seedTrack) return;
+  try {
+    const lang = seedTrack.lang || 'ta';
+    const [byLang, bySimilar] = await Promise.allSettled([
+      JamendoAPI.getByLanguage(lang, 80),
+      JamendoAPI.getSimilarTracks(seedTrack, 60),
+    ]);
+    const get = r => (r.status === 'fulfilled' ? r.value : []);
+    const extra = [...get(byLang), ...get(bySimilar)];
+    mergeIntoAll(extra);
+    const qIds = new Set(State.queue.map(t => t.id));
+    const toAdd = extra.filter(t => !qIds.has(t.id));
+    if (toAdd.length) State.queue.push(...toAdd);
+  } catch (_) { /* silent */ }
+}
+
+// Fetch fresh tracks when queue is nearly exhausted and append/play
+async function _autoRefillQueue() {
+  if (State._refilling) return; // debounce
+  State._refilling = true;
+  showToast('Loading more tracks…', 'info', 'fa-spinner');
+  try {
+    const seed = State.currentTrack;
+    const tracks = await JamendoAPI.getSimilarTracks(seed || { lang: 'ta', artist: '' }, 60);
+    const qIds = new Set(State.queue.map(t => t.id));
+    const fresh = tracks.filter(t => !qIds.has(t.id));
+    if (fresh.length) {
+      mergeIntoAll(fresh);
+      const insertAt = State.queue.length;
+      State.queue.push(...fresh);
+      State.queueIndex = insertAt;
+      playTrack(State.queue[State.queueIndex]);
+    } else {
+      // Absolute fallback: wrap to start
+      State.queueIndex = 0;
+      playTrack(State.queue[0]);
+    }
+  } catch (_) {
+    State.queueIndex = 0;
+    playTrack(State.queue[0]);
+  } finally {
+    State._refilling = false;
+  }
 }
 
 // =============================================
@@ -939,6 +1034,7 @@ function sortLibrary(key) {
 // =============================================
 
 function playTrackFromList(index) {
+  deactivateSmartRadio(); // explicit play from grid — leave smart radio mode
   State.queueIndex = index;
   playTrack(State.queue[index] || State.allTracks[index]);
 }
@@ -947,6 +1043,13 @@ function playTrack(track) {
   if (!track) return;
 
   ensureAudioContext();
+
+  // Push the current track to history before switching (max 200 entries)
+  if (State.currentTrack && (!State.playHistory.length || State.playHistory[State.playHistory.length - 1].id !== State.currentTrack.id)) {
+    State.playHistory.push(State.currentTrack);
+    if (State.playHistory.length > 200) State.playHistory.shift();
+  }
+
   State.currentTrack = track;
 
   const artDefault = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%231e1b4b'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='100' fill='%238b5cf6'%3E%E2%99%AB%3C/text%3E%3C/svg%3E`;
@@ -1043,37 +1146,130 @@ function updatePlayButtons(playing) {
 
 function nextTrack() {
   if (!State.queue.length) return;
+
+  // ---- Smart Radio mode (Spotify-like) ----
+  if (State.smartRadio.active) {
+    const sr = State.smartRadio;
+
+    if (sr.tracks.length > 0) {
+      let nextT;
+      if (State.isShuffled) {
+        const idx = Math.floor(Math.random() * sr.tracks.length);
+        nextT = sr.tracks[idx];
+      } else {
+        nextT = sr.tracks[sr.index % sr.tracks.length];
+        sr.index++;
+        // When 80% through, silently fetch more so we never run dry
+        if (!sr.fetching && sr.index >= Math.floor(sr.tracks.length * 0.8)) {
+          sr.fetching = true;
+          JamendoAPI.getSimilarTracks(State.currentTrack || nextT, 60).then(more => {
+            const seen = new Set(sr.tracks.map(t => t.id));
+            const fresh = more.filter(t => !seen.has(t.id));
+            if (fresh.length) {
+              sr.tracks = sr.tracks.concat(fresh);
+              mergeIntoAll(fresh);
+            }
+            sr.fetching = false;
+          }).catch(() => { sr.fetching = false; });
+        }
+      }
+      // Append to main queue so prevTrack works
+      let qIdx = State.queue.findIndex(t => t.id === nextT.id);
+      if (qIdx < 0) { State.queue.push(nextT); qIdx = State.queue.length - 1; }
+      State.queueIndex = qIdx;
+      playTrack(nextT);
+      return;
+    }
+
+    // sr.tracks still loading — pick a same-lang track from what's already loaded
+    if (sr.fetching) {
+      const lang = sr.lang || (State.currentTrack && State.currentTrack.lang);
+      const fallbacks = State.allTracks.filter(t =>
+        t.lang === lang && t.id !== (State.currentTrack && State.currentTrack.id)
+      );
+      if (fallbacks.length) {
+        const picked = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        let qIdx = State.queue.findIndex(t => t.id === picked.id);
+        if (qIdx < 0) { State.queue.push(picked); qIdx = State.queue.length - 1; }
+        State.queueIndex = qIdx;
+        playTrack(picked);
+        return;
+      }
+      // No fallbacks yet — fall through to normal queue
+    }
+  }
+
+  // ---- Normal queue logic ----
   if (State.isShuffled) {
-    // Pick random track that isn't the current one
     let idx;
     do { idx = Math.floor(Math.random() * State.queue.length); }
     while (State.queue.length > 1 && idx === State.queueIndex);
     State.queueIndex = idx;
-  } else {
-    const next = State.queueIndex + 1;
-    if (next >= State.queue.length) {
-      // End of queue — pull from allTracks that aren't already in queue
-      const qIds = new Set(State.queue.map(t => t.id));
-      const extras = State.allTracks.filter(t => !qIds.has(t.id));
-      if (extras.length) {
-        State.queue.push(...extras);
-      } else {
-        // Nothing new — just wrap
-        State.queueIndex = 0;
-        playTrack(State.queue[0]);
-        return;
-      }
-    }
-    State.queueIndex = next;
+    playTrack(State.queue[State.queueIndex]);
+    return;
   }
+
+  const next = State.queueIndex + 1;
+  if (next >= State.queue.length) {
+    // Try extending from allTracks first
+    const qIds = new Set(State.queue.map(t => t.id));
+    const extras = State.allTracks.filter(t => !qIds.has(t.id));
+    if (extras.length) {
+      State.queue.push(...extras);
+      State.queueIndex = next;
+      playTrack(State.queue[State.queueIndex]);
+    } else {
+      // Fetch a fresh batch from the API — no wrapping, always new music
+      _autoRefillQueue();
+    }
+    return;
+  }
+
+  // Proactively pad when < 5 tracks remain so next skips never stall
+  if (State.queue.length - next <= 5 && State.currentTrack && !State._refilling) {
+    _padQueueInBackground(State.currentTrack, new Set(State.queue.map(t => t.id)));
+  }
+
+  State.queueIndex = next;
   playTrack(State.queue[State.queueIndex]);
 }
 
 function prevTrack() {
-  if (!State.queue.length) return;
+  // If more than 3 seconds in, restart current track
   if (audio.currentTime > 3) { audio.currentTime = 0; return; }
-  State.queueIndex = (State.queueIndex - 1 + State.queue.length) % State.queue.length;
-  playTrack(State.queue[State.queueIndex]);
+
+  // Pop the last track from history and play it
+  if (State.playHistory.length > 0) {
+    const prev = State.playHistory.pop(); // pop so repeated prev keeps going back
+    // Find it in the queue to keep queueIndex in sync
+    const idx = State.queue.findIndex(t => t.id === prev.id);
+    if (idx >= 0) State.queueIndex = idx;
+    // Play without pushing to history (we're going backwards)
+    ensureAudioContext();
+    State.currentTrack = prev;
+    const artDefault = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%231e1b4b'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='100' fill='%238b5cf6'%3E%E2%99%AB%3C/text%3E%3C/svg%3E`;
+    document.getElementById('playerTitle').textContent = prev.title;
+    document.getElementById('playerArtist').textContent = prev.artist;
+    document.getElementById('playerArt').src = prev.cover || artDefault;
+    document.getElementById('nppTitle').textContent = prev.title;
+    document.getElementById('nppArtist').textContent = prev.artist;
+    updatePlayerFavBtn();
+    const finalAudio = prev.audio || `https://mp3l.jamendo.com/?trackid=${encodeURIComponent(prev.id)}&format=mp31`;
+    audio.src = finalAudio;
+    audio.volume = State.volume;
+    audio.muted = State.isMuted;
+    audio.load();
+    audio.play().then(() => {
+      State.isPlaying = true;
+      updatePlayButtons(true);
+      document.getElementById('playerArt').classList.add('spinning');
+    }).catch(() => {});
+    document.title = `${prev.title} — MusiFy`;
+    return;
+  }
+
+  // No history yet — restart current track
+  audio.currentTime = 0;
 }
 
 function toggleShuffle() {
