@@ -419,23 +419,48 @@ function initUser() {
   document.getElementById('ddName').textContent = name || '—';
   document.getElementById('ddUser').textContent = username || '—';
 
-  // Ensure user entry in storage
-  if (username && !State.users[username]) {
-    State.users[username] = { favorites: [] };
-    localStorage.setItem('musify_users', JSON.stringify(State.users));
+  // Ensure user entry exists in storage without overwriting existing favorites
+  if (username) {
+    try {
+      const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
+      if (!stored[username]) {
+        stored[username] = { favorites: [] };
+        localStorage.setItem('musify_users', JSON.stringify(stored));
+      }
+      State.users = stored;
+    } catch (e) { /* silent */ }
   }
 }
 
 function getFavorites() {
   const { username } = State.session;
-  return (State.users[username] && State.users[username].favorites) || [];
+  if (!username) return [];
+  // Always read from localStorage so we never return a stale in-memory copy
+  try {
+    const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
+    // Keep in-memory State.users in sync
+    State.users = stored;
+    return (stored[username] && Array.isArray(stored[username].favorites))
+      ? stored[username].favorites
+      : [];
+  } catch { return []; }
 }
 
 function saveFavorites(favs) {
   const { username } = State.session;
-  if (!State.users[username]) State.users[username] = {};
-  State.users[username].favorites = favs;
-  localStorage.setItem('musify_users', JSON.stringify(State.users));
+  if (!username) return;
+  // Always read fresh from localStorage before writing to avoid clobbering
+  // another tab's changes or a stale in-memory copy
+  try {
+    const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
+    if (!stored[username]) stored[username] = {};
+    stored[username].favorites = favs;
+    localStorage.setItem('musify_users', JSON.stringify(stored));
+    // Keep in-memory copy in sync
+    State.users = stored;
+  } catch (e) {
+    console.error('[MusiFy] Could not save favorites:', e);
+  }
 }
 
 function isFavorited(trackId) {
@@ -841,6 +866,282 @@ async function loadIntoLibrary(type) {
   }
 }
 
+// =============================================
+//  ARTIST BROWSE
+// =============================================
+
+const LANG_ARTISTS = {
+  ta: [
+    'A.R. Rahman', 'Anirudh Ravichander', 'Harris Jayaraj',
+    'Yuvan Shankar Raja', 'Ilaiyaraaja', 'Sid Sriram',
+    'D. Imman', 'G.V. Prakash Kumar', 'Vijay Antony',
+    'Haricharan', 'Karthik', 'Anthony Daasan',
+    'Shankar Mahadevan', 'Hariharan', 'S.P. Balasubrahmanyam',
+    'Unni Krishnan', 'Vijay Yesudas', 'Shreya Ghoshal',
+    'Chinmayi', 'Benny Dayal', 'Naresh Iyer',
+    'Tippu', 'Divya Menon', 'Vandana Srinivasan',
+    'Devan Ekambaram', 'Arjun Janya', 'Deva',
+    'Joshua Sridhar', 'Anand Aravindakshan', 'Sathyaprakash',
+    'Rita', 'Nithyashree Mahadevan', 'Kalpana',
+    'Mano', 'P. Unnikrishnan', 'Mahalakshmi Iyer',
+    'K.S. Chitra', 'Sadhana Sargam', 'Srinivas',
+    'Kalyani Menon', 'Pradeep', 'Mahathi',
+    'Velmurugan', 'Gana Balachandar', 'Sajesh Warrier',
+  ],
+  ml: [
+    'K.J. Yesudas', 'K.S. Chithra', 'Vineeth Sreenivasan',
+    'Gopi Sundar', 'Bijibal', 'Shaan Rahman',
+    'Alphons Joseph', 'Ouseppachan', 'B. Unnikrishnan',
+    'M.G. Sreekumar', 'Sujatha Mohan', 'Rimi Tomy',
+    'Manjari', 'Haricharan', 'Jassie Gift',
+    'Rex Vijayan', 'Mejo Joseph', 'Vijay Yesudas',
+    'Sithara Krishnakumar', 'Kester', 'Najim Arshad',
+    'Afsal', 'M. Jayachandran', 'Vidyasagar',
+    'Raveendran', 'Johnson', 'Berny Ignatius',
+    'Shreya Ghoshal', 'Swetha Mohan', 'Rahul Raj',
+    'Shankar Mahadevan', 'Madhu Balakrishnan', 'G. Venugopal',
+    'Kavya Ajit', 'Aparna Rajeev', 'Meera Nair',
+    'Sujith Karamana', 'Sithara', 'Smitha',
+    'Chandrika', 'Padmalatha', 'Satheesh Babu',
+    'Mithun Jayaraj', 'Ranjin Raj', 'Shyam Dhar',
+  ],
+  hi: [
+    'Arijit Singh', 'Atif Aslam', 'Shreya Ghoshal',
+    'Sonu Nigam', 'Neha Kakkar', 'Kumar Sanu',
+    'Alka Yagnik', 'Mohd Rafi', 'Lata Mangeshkar',
+    'Kishore Kumar', 'Badshah', 'Pritam',
+    'Udit Narayan', 'Vishal Shekhar', 'Jubin Nautiyal',
+    'Shankar Mahadevan', 'Hariharan', 'Sunidhi Chauhan',
+    'KK', 'Shaan', 'Abhijeet',
+    'Kavita Krishnamurthy', 'Asha Bhosle', 'Armaan Malik',
+    'Darshan Raval', 'Benny Dayal', 'Monali Thakur',
+    'Javed Ali', 'Rahat Fateh Ali Khan', 'Mohit Chauhan',
+    'Tulsi Kumar', 'Palak Muchhal', 'Aakanksha Sharma',
+    'Amit Trivedi', 'Mika Singh', 'Yo Yo Honey Singh',
+    'Guru Randhawa', 'Harrdy Sandhu', 'Dhvani Bhanushali',
+    'Papon', 'Rekha Bhardwaj', 'Richa Sharma',
+    'Sukhwinder Singh', 'Nakash Aziz', 'Shekhar Ravjiani',
+  ],
+  en: [
+    'Ed Sheeran', 'The Weeknd', 'Taylor Swift',
+    'Billie Eilish', 'Adele', 'Dua Lipa',
+    'Harry Styles', 'Post Malone', 'Coldplay',
+    'Imagine Dragons', 'Charlie Puth', 'Olivia Rodrigo',
+    'Bruno Mars', 'Ariana Grande', 'Justin Bieber',
+    'Shawn Mendes', 'Sam Smith', 'Lewis Capaldi',
+    'Halsey', 'Twenty One Pilots', 'Maroon 5',
+    'Justin Timberlake', 'Beyoncé', 'Rihanna',
+    'Eminem', 'Drake', 'Selena Gomez',
+    'Lady Gaga', 'Katy Perry', 'Pink',
+    'John Legend', 'Ellie Goulding', 'Sia',
+    'The Chainsmokers', 'Marshmello', 'Calvin Harris',
+    'Camila Cabello', 'Lizzo', 'Doja Cat',
+    'Khalid', 'H.E.R.', 'Daniel Caesar',
+    'Glass Animals', 'Hozier', 'James Arthur',
+  ],
+};
+
+const LANG_COLORS = {
+  ta: [['#7c3aed','#2563eb'], ['#6d28d9','#1d4ed8'], ['#5b21b6','#3b82f6']],
+  ml: [['#0891b2','#6d28d9'], ['#0e7490','#7c3aed'], ['#164e63','#5b21b6']],
+  hi: [['#d97706','#dc2626'], ['#b45309','#b91c1c'], ['#f59e0b','#ef4444']],
+  en: [['#059669','#1d4ed8'], ['#047857','#2563eb'], ['#065f46','#1e40af']],
+};
+
+function artistSvgAvatar(name, lang) {
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  const colorPairs = LANG_COLORS[lang] || LANG_COLORS.ta;
+  const pair = colorPairs[Math.abs(name.charCodeAt(0) + name.charCodeAt(1 % name.length)) % colorPairs.length];
+  const [c1, c2] = pair;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">`
+    + `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">`
+    + `<stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/>`
+    + `</linearGradient></defs>`
+    + `<circle cx="100" cy="100" r="100" fill="url(#g)"/>`
+    + `<circle cx="100" cy="100" r="96" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>`
+    + `<text x="100" y="116" text-anchor="middle" font-family="'Space Grotesk',sans-serif" font-size="72" font-weight="700" fill="white" opacity="0.95">${initials}</text>`
+    + `</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+// Fetch real artist photo — tries Wikipedia with multiple fallback terms
+async function loadWikiImage(artistName, imgEl) {
+  const tries = [
+    artistName,
+    artistName + ' singer',
+    artistName + ' musician',
+    artistName + ' actor',
+  ];
+  for (const term of tries) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(
+        'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(term),
+        { signal: ctrl.signal }
+      );
+      clearTimeout(tid);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const url = data.thumbnail?.source;
+      if (url && imgEl && imgEl.isConnected) { imgEl.src = url; return; }
+    } catch { /* try next */ }
+  }
+}
+
+let _currentArtistLang = null;
+
+async function browseLanguage(lang) {
+  _currentArtistLang = lang;
+  const langName = JamendoAPI.LANGUAGES[lang] || lang.toUpperCase();
+
+  // Switch to artists view
+  State.currentView = 'artists';
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-artists').classList.add('active');
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+  closeMobileSidebar();
+
+  const titleEl = document.getElementById('artistsViewTitle');
+  if (titleEl) titleEl.textContent = langName + ' Artists';
+
+  const grid = document.getElementById('artistGrid');
+  if (!grid) return;
+
+  const artists = LANG_ARTISTS[lang] || [];
+  grid.innerHTML = artists.map((name, idx) => `
+    <div class="artist-card" data-artist="${escHtml(name)}" data-lang="${lang}"
+         onclick="browseArtist(this.dataset.artist, this.dataset.lang)">
+      <div class="artist-cover-wrap">
+        <img class="artist-avatar" id="artist-img-${idx}"
+             src="${artistSvgAvatar(name, lang)}"
+             alt="${escHtml(name)}" />
+      </div>
+      <div class="artist-card-bottom">
+        <div class="artist-name">${escHtml(name)}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Async load real Wikipedia photos — SVG shown immediately as placeholder
+  artists.forEach((name, idx) => {
+    const imgEl = document.getElementById('artist-img-' + idx);
+    if (imgEl) loadWikiImage(name, imgEl);
+  });
+}
+
+async function browseArtist(name, lang) {
+  _currentArtistLang = lang;
+
+  // Switch to artist detail view
+  State.currentView = 'artist-detail';
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-artist-detail').classList.add('active');
+  closeMobileSidebar();
+
+  const avatarEl = document.getElementById('artistDetailAvatar');
+  const nameEl   = document.getElementById('artistDetailName');
+  const metaEl   = document.getElementById('artistDetailMeta');
+  const songsEl  = document.getElementById('artistSongsList');
+  const albumsEl = document.getElementById('artistAlbumsGrid');
+
+  if (avatarEl) { avatarEl.src = artistSvgAvatar(name, lang || _currentArtistLang || 'ta'); loadWikiImage(name, avatarEl); }
+  if (nameEl)   nameEl.textContent = name;
+  if (metaEl)   metaEl.textContent = 'Loading songs…';
+  if (songsEl)  songsEl.innerHTML  = skeletonRows(6);
+  if (albumsEl) albumsEl.innerHTML = '';
+
+  try {
+    const tracks = await JamendoAPI.searchTracks(name, 80, 'artist');
+
+    // Keep only tracks whose artist field actually contains this artist's name
+    const nameLower = name.toLowerCase().trim();
+    const nameWords = nameLower.split(/\s+/).filter(Boolean);
+
+    function artistMatches(artistField) {
+      if (!artistField) return false;
+      const af = artistField.toLowerCase();
+      // All words of the searched name must appear in the artist field
+      return nameWords.every(w => af.includes(w));
+    }
+
+    let filtered = tracks.filter(t => artistMatches(t.artist));
+
+    // If too few, relax to: artist field contains the longest word of the name
+    if (filtered.length < 3) {
+      const mainWord = nameWords.reduce((a, b) => a.length >= b.length ? a : b, '');
+      if (mainWord) {
+        filtered = tracks.filter(t => (t.artist || '').toLowerCase().includes(mainWord));
+      }
+    }
+
+    // Never dump all unrelated tracks — use what we have (even if empty)
+    const all = filtered;
+    mergeIntoAll(all);
+    State.queue = [...all];
+
+    if (metaEl) metaEl.textContent = all.length
+      ? `${all.length} song${all.length !== 1 ? 's' : ''} · ${(JamendoAPI.LANGUAGES[lang] || '')}`.trim()
+      : 'No songs found';
+
+    if (songsEl) {
+      songsEl.innerHTML = all.length
+        ? renderTracksAsList(all)
+        : '<div style="color:var(--text-2);padding:24px;">No songs found for this artist.</div>';
+    }
+
+    // Group by album
+    if (albumsEl) {
+      const albumMap = {};
+      all.forEach(t => {
+        const key = t.album || 'Singles';
+        if (!albumMap[key]) albumMap[key] = { name: key, cover: t.cover, tracks: [] };
+        albumMap[key].tracks.push(t);
+      });
+      const albums = Object.values(albumMap).sort((a, b) => b.tracks.length - a.tracks.length);
+      albumsEl.innerHTML = albums.length ? albums.map(al => `
+        <div class="album-card" data-album="${escHtml(al.name)}" onclick="playAlbum(this.dataset.album)">
+          <div class="album-card-cover-wrap">
+            <img class="album-card-cover" src="${escHtml(al.cover || '')}" alt="${escHtml(al.name)}"
+                 loading="lazy" onerror="this.style.display='none'" />
+            <div class="album-card-play"><i class="fas fa-play"></i></div>
+          </div>
+          <div class="album-card-info">
+            <div class="album-card-name">${escHtml(al.name)}</div>
+            <div class="album-card-count">${al.tracks.length} track${al.tracks.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      `).join('') : '<div style="color:var(--text-2);padding:12px 0;">No albums found.</div>';
+    }
+
+    if (all.length) showToast(`${all.length} songs by ${name}`, 'success');
+  } catch(e) {
+    if (songsEl)  songsEl.innerHTML  = '<div style="color:var(--text-2);padding:24px;">Could not load songs.</div>';
+    if (metaEl)   metaEl.textContent = 'Error loading';
+  }
+}
+
+function goBackToArtists() {
+  if (_currentArtistLang) browseLanguage(_currentArtistLang);
+  else switchView('home', document.querySelector('[data-view=home]'));
+}
+
+function playAlbum(albumName) {
+  // Prefer tracks already in the current queue (filtered to the right artist/context)
+  // so album playback doesn't pull in unrelated songs from allTracks
+  const fromQueue = State.queue.filter(t => t.album === albumName);
+  const tracks = fromQueue.length
+    ? fromQueue
+    : State.allTracks.filter(t => t.album === albumName);
+  if (!tracks.length) { showToast('No tracks loaded for this album', 'info'); return; }
+  deactivateSmartRadio();
+  State.queue = [...tracks];
+  State.queueIndex = 0;
+  playTrack(State.queue[0]);
+  showToast(`Playing "${albumName}"`, 'success');
+}
+
 async function browseGenre(genre) {
   switchView('library', null);
   const list = document.getElementById('libraryList');
@@ -857,40 +1158,6 @@ async function browseGenre(genre) {
     showToast(`${tracks.length} ${label} tracks loaded`, 'success');
   } catch(e) {
     if (list) list.innerHTML = '<div style="color:var(--text-secondary);padding:20px;">Could not load genre tracks.</div>';
-  }
-}
-
-async function browseLanguage(lang) {
-  switchView('library', null);
-  const list = document.getElementById('libraryList');
-  if (list) list.innerHTML = skeletonRows(8);
-  const header = document.querySelector('#view-library .section-header h2');
-  const sortBtns = document.querySelector('#view-library .section-header div');
-  const langName = JamendoAPI.LANGUAGES[lang] || lang.toUpperCase();
-  if (header) header.innerHTML = `<i class="fas fa-globe" style="margin-right:8px;color:var(--accent-cyan);"></i>${langName} Music`;
-
-  // Add a "Load More" button next to sort controls
-  if (sortBtns) {
-    // Remove any previous load-more for language
-    const prev = document.getElementById('langLoadMoreBtn');
-    if (prev) prev.remove();
-    const btn = document.createElement('button');
-    btn.id = 'langLoadMoreBtn';
-    btn.className = 'btn btn-ghost';
-    btn.style.cssText = 'padding:6px 14px;font-size:12px;';
-    btn.textContent = 'Load More';
-    btn.onclick = () => browseLanguage(lang);
-    sortBtns.prepend(btn);
-  }
-
-  try {
-    const tracks = await JamendoAPI.getByLanguage(lang, 80);
-    mergeIntoAll(tracks);
-    State.queue = [...tracks];
-    renderList('libraryList', tracks);
-    showToast(`${tracks.length} ${langName} tracks loaded`, 'success');
-  } catch(e) {
-    if (list) list.innerHTML = '<div style="color:var(--text-secondary);padding:20px;">Could not load language tracks.</div>';
   }
 }
 
@@ -970,7 +1237,31 @@ async function performSearch(query) {
   noResult.style.display = 'none';
   results.innerHTML = skeletonRows(8);
 
-  const tracks = await JamendoAPI.searchTracks(query, 120, _searchFilter);
+  const rawTracks = await JamendoAPI.searchTracks(query, 120, _searchFilter);
+
+  // ---- Relevance filter: only keep tracks that actually match the query ----
+  const qLow = query.toLowerCase();
+  const qWords = qLow.split(/\s+/).filter(Boolean);
+  function wordMatch(str) {
+    if (!str) return false;
+    const s = str.toLowerCase();
+    return qWords.some(w => s.includes(w));
+  }
+  let tracks;
+  if (_searchFilter === 'artist') {
+    // Must match artist name
+    tracks = rawTracks.filter(t => wordMatch(t.artist));
+    // Fallback: if too few, relax to any that partially match the first word
+    if (tracks.length < 3) tracks = rawTracks.filter(t => (t.artist||'').toLowerCase().includes(qWords[0]||''));
+  } else if (_searchFilter === 'album' || _searchFilter === 'film') {
+    // Must match album name
+    tracks = rawTracks.filter(t => wordMatch(t.album));
+    if (tracks.length < 3) tracks = rawTracks.filter(t => (t.album||'').toLowerCase().includes(qWords[0]||''));
+  } else {
+    // Song search: match title or artist
+    tracks = rawTracks.filter(t => wordMatch(t.title) || wordMatch(t.artist));
+    if (tracks.length < 3) tracks = rawTracks; // fallback: show all
+  }
 
   if (tracks.length === 0) {
     results.innerHTML = '';
@@ -979,15 +1270,67 @@ async function performSearch(query) {
   }
 
   mergeIntoAll(tracks);
-
-  // Queue = search results first, then all other loaded tracks
   const searchIds = new Set(tracks.map(t => t.id));
   const rest = State.allTracks.filter(t => !searchIds.has(t.id));
   State.queue = [...tracks, ...rest];
 
-  results.innerHTML = renderTracksAsList(tracks);
+  if (_searchFilter === 'artist') {
+    // Group by artist name → show artist cards
+    const artistMap = {};
+    tracks.forEach(t => {
+      const names = (t.artist || 'Unknown').split(/[,&\/]+/).map(n => n.trim()).filter(Boolean);
+      names.forEach(n => {
+        if (!artistMap[n]) artistMap[n] = { name: n, cover: t.cover, count: 0 };
+        artistMap[n].count++;
+      });
+    });
+    const artists = Object.values(artistMap).sort((a, b) => b.count - a.count);
+    results.innerHTML = `<div class="artist-grid" style="padding-top:12px;">` +
+      artists.map((a, idx) => `
+        <div class="artist-card" data-artist="${escHtml(a.name)}" data-lang=""
+             onclick="browseArtist(this.dataset.artist, this.dataset.lang)">
+          <div class="artist-cover-wrap">
+            <img class="artist-avatar" id="srch-artist-${idx}"
+                 src="${artistSvgAvatar(a.name, '')}"
+                 alt="${escHtml(a.name)}" />
+          </div>
+          <div class="artist-card-bottom">
+            <div class="artist-name">${escHtml(a.name)}</div>
+          </div>
+        </div>`).join('') + `</div>`;
+    artists.forEach((a, idx) => {
+      const imgEl = document.getElementById('srch-artist-' + idx);
+      if (imgEl) loadWikiImage(a.name, imgEl);
+    });
 
-  // Background: pad the queue with 100+ related tracks so playback never stops
+  } else if (_searchFilter === 'album' || _searchFilter === 'film') {
+    // Group by album name → show album/film cards
+    const albumMap = {};
+    tracks.forEach(t => {
+      const key = t.album || 'Unknown Album';
+      if (!albumMap[key]) albumMap[key] = { name: key, cover: t.cover, artist: t.artist, tracks: [] };
+      albumMap[key].tracks.push(t);
+    });
+    const albums = Object.values(albumMap).sort((a, b) => b.tracks.length - a.tracks.length);
+    results.innerHTML = `<div class="artist-albums-grid" style="padding-top:12px;">` +
+      albums.map(al => `
+        <div class="album-card" data-album="${escHtml(al.name)}" onclick="playAlbum(this.dataset.album)">
+          <div class="album-card-cover-wrap">
+            <img class="album-card-cover" src="${escHtml(al.cover || '')}" alt="${escHtml(al.name)}"
+                 loading="lazy" onerror="this.style.display='none'" />
+            <div class="album-card-play"><i class="fas fa-play"></i></div>
+          </div>
+          <div class="album-card-info">
+            <div class="album-card-name">${escHtml(al.name)}</div>
+            <div class="album-card-count">${escHtml(al.artist)} · ${al.tracks.length} track${al.tracks.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>`).join('') + `</div>`;
+
+  } else {
+    // Song filter — list view
+    results.innerHTML = renderTracksAsList(tracks);
+  }
+
   _padQueueInBackground(tracks[0], searchIds);
 }
 

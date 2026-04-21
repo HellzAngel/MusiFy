@@ -381,6 +381,39 @@
           <div id="libraryList" class="track-list"></div>
         </div>
 
+        <!-- ARTISTS VIEW -->
+        <div class="view" id="view-artists">
+          <div class="section-header" style="margin-bottom:4px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <button class="btn-icon" onclick="switchView('home', document.querySelector('[data-view=home]'))" title="Back"><i class="fas fa-arrow-left"></i></button>
+              <h2 class="section-title" id="artistsViewTitle">Artists</h2>
+            </div>
+          </div>
+          <div class="artist-grid" id="artistGrid"></div>
+        </div>
+
+        <!-- ARTIST DETAIL VIEW -->
+        <div class="view" id="view-artist-detail">
+          <div class="artist-detail-header">
+            <button class="btn-icon" onclick="goBackToArtists()" title="Back"><i class="fas fa-arrow-left"></i></button>
+            <img class="artist-detail-avatar" id="artistDetailAvatar" src="" alt="" />
+            <div class="artist-detail-info">
+              <div class="artist-detail-name" id="artistDetailName">—</div>
+              <div class="artist-detail-meta" id="artistDetailMeta">Loading...</div>
+            </div>
+          </div>
+
+          <div class="section-header" style="margin-top:24px;">
+            <h2 class="section-title"><i class="fas fa-music" style="color:var(--accent);margin-right:8px;"></i>Songs</h2>
+          </div>
+          <div id="artistSongsList" class="track-list"></div>
+
+          <div class="section-header" style="margin-top:28px;">
+            <h2 class="section-title"><i class="fas fa-record-vinyl" style="color:var(--accent-cyan);margin-right:8px;"></i>Albums</h2>
+          </div>
+          <div class="artist-albums-grid" id="artistAlbumsGrid"></div>
+        </div>
+
       </main>
     </div>
   </div>
