@@ -34,6 +34,265 @@
   --shadow: 0 8px 40px rgba(0,0,0,0.6);
 }
 
+/* ============================
+   WHITE / LIGHT THEME
+   ============================ */
+body.light-theme {
+  --bg:            #f0f2f8;
+  --bg-2:          #e8eaf2;
+  --bg-3:          #dde0ef;
+  --bg-card:       rgba(255,255,255,0.75);
+  --bg-card-hover: rgba(255,255,255,0.95);
+  --bg-glass:      rgba(240,242,248,0.88);
+  --accent:        #7c3aed;
+  --accent-dim:    rgba(124,58,237,0.10);
+  --accent-glow:   rgba(124,58,237,0.22);
+  --accent-cyan:   #0891b2;
+  --accent-pink:   #db2777;
+  --accent-green:  #059669;
+  --text-1:        #13111e;
+  --text-2:        #5b5880;
+  --text-3:        #9492b8;
+  --border:        rgba(0,0,0,0.08);
+  --border-accent: rgba(124,58,237,0.22);
+  --shadow:        0 4px 24px rgba(0,0,0,0.10);
+}
+
+body.light-theme {
+  background: var(--bg);
+  color: var(--text-1);
+}
+
+/* Topbar */
+body.light-theme .topbar {
+  background: rgba(240,242,248,0.90);
+  border-bottom-color: var(--border);
+}
+
+/* Sidebar */
+body.light-theme .sidebar {
+  background: #e8eaf2;
+  border-right-color: var(--border);
+}
+body.light-theme .sidebar-logo {
+  border-bottom-color: var(--border);
+}
+
+/* Sidebar user divider */
+body.light-theme .sidebar-user {
+  border-top-color: var(--border);
+}
+
+/* Profile dropdown */
+body.light-theme .profile-dropdown {
+  background: #fff;
+  border-color: var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+body.light-theme .dropdown-header {
+  border-bottom-color: var(--border);
+}
+body.light-theme .dropdown-item { color: var(--text-1); }
+body.light-theme .dropdown-item:hover { background: var(--bg-card-hover); }
+body.light-theme .dropdown-item.danger { color: #ef4444; }
+
+/* Track cards */
+body.light-theme .track-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+body.light-theme .track-card:hover {
+  border-color: rgba(124,58,237,0.35);
+  box-shadow:
+    0 12px 32px rgba(0,0,0,0.12),
+    0 0 0 1px rgba(124,58,237,0.18),
+    0 0 20px rgba(124,58,237,0.10);
+}
+body.light-theme .track-card-cover { background: var(--bg-3); }
+body.light-theme .track-card-title { color: var(--text-1); }
+body.light-theme .track-card-artist { color: var(--text-2); }
+
+/* Track list */
+body.light-theme .track-list-item:hover {
+  background: rgba(124,58,237,0.06);
+  box-shadow: inset 0 0 0 1px rgba(124,58,237,0.10);
+}
+body.light-theme .track-list-item.playing {
+  background: rgba(124,58,237,0.08);
+  border-color: rgba(124,58,237,0.18);
+}
+body.light-theme .track-list-thumb { background: var(--bg-3); }
+
+/* Search bar */
+body.light-theme .search-bar {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(0,0,0,0.10);
+}
+body.light-theme .search-bar:focus-within {
+  border-color: rgba(124,58,237,0.35);
+  background: #fff;
+}
+body.light-theme .search-bar input { color: var(--text-1); }
+
+/* Toast */
+body.light-theme .toast {
+  background: rgba(255,255,255,0.97);
+  border-color: var(--border);
+  color: var(--text-1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* Music player bar */
+body.light-theme .player-bar {
+  background: rgba(248,249,255,0.97);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08), 0 -1px 0 rgba(124,58,237,0.10);
+}
+body.light-theme .player-track-title { color: var(--text-1); }
+body.light-theme .player-track-artist { color: var(--text-2); }
+body.light-theme .progress-track { background: rgba(0,0,0,0.10); }
+body.light-theme .time-label { color: var(--text-2); }
+body.light-theme .volume-btn { color: var(--text-2); }
+body.light-theme .volume-btn:hover { color: var(--text-1); }
+body.light-theme .ctrl-btn { color: var(--text-2); }
+body.light-theme .ctrl-btn:hover { color: var(--text-1); background: rgba(0,0,0,0.06); }
+body.light-theme .ctrl-btn.active { color: var(--accent); }
+body.light-theme .play-pause-btn { color: #fff; }
+body.light-theme .player-fav-btn { color: var(--text-3); }
+body.light-theme #miniOrbCanvas { border-color: rgba(124,58,237,0.18); }
+
+/* Hero banner */
+body.light-theme .hero-banner {
+  background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+  border-color: rgba(124,58,237,0.15);
+}
+body.light-theme .hero-banner::before {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 50%, rgba(8,145,178,0.08) 0%, transparent 50%);
+}
+body.light-theme .hero-title { color: #13111e; }
+body.light-theme .hero-waves { opacity: 0.25; }
+
+/* Content area */
+body.light-theme .content-area { background: var(--bg); }
+
+/* Now playing panel */
+body.light-theme .now-playing-panel {
+  background: rgba(240,242,248,0.97);
+  backdrop-filter: blur(40px);
+}
+body.light-theme .npp-title { color: var(--text-1); }
+body.light-theme .npp-artist { color: var(--text-2); }
+body.light-theme .npp-close {
+  background: rgba(255,255,255,0.7);
+  border-color: var(--border);
+  color: var(--text-2);
+}
+body.light-theme .npp-close:hover { background: #fff; color: var(--text-1); }
+
+/* Mobile nav */
+body.light-theme .mobile-nav {
+  background: rgba(248,249,255,0.97);
+  border-top-color: var(--border);
+}
+body.light-theme .mobile-nav-item { color: var(--text-3); }
+body.light-theme .mobile-nav-item.active { color: var(--accent); }
+
+/* Search filter tabs */
+body.light-theme .sft {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(0,0,0,0.10);
+  color: var(--text-2);
+}
+body.light-theme .sft:hover {
+  background: rgba(124,58,237,0.07);
+  border-color: rgba(124,58,237,0.25);
+  color: var(--text-1);
+}
+body.light-theme .sft.active {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* Skeleton loading */
+body.light-theme .skeleton {
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.04) 25%,
+    rgba(124,58,237,0.08) 50%,
+    rgba(0,0,0,0.04) 75%
+  );
+  background-size: 200% 100%;
+  border-color: rgba(0,0,0,0.04);
+}
+body.light-theme .skeleton-card {
+  background: #fff;
+  border-color: rgba(0,0,0,0.06);
+}
+body.light-theme .skeleton-line,
+body.light-theme .skeleton-cover { background: rgba(0,0,0,0.06); }
+
+/* Sidebar backdrop overlay */
+body.light-theme .sidebar-backdrop { background: rgba(0,0,0,0.25); }
+
+/* Logo text */
+body.light-theme .logo-text { color: var(--text-1); }
+body.light-theme .user-name  { color: var(--text-1); }
+body.light-theme .user-plan  { color: var(--accent); }
+
+/* Section link */
+body.light-theme .section-link { color: var(--accent); }
+
+/* Badge */
+body.light-theme .badge-purple {
+  background: rgba(124,58,237,0.10);
+  color: var(--accent);
+  border-color: rgba(124,58,237,0.22);
+}
+
+/* Fav overlay button */
+body.light-theme .fav-btn-overlay {
+  background: rgba(255,255,255,0.75);
+  color: rgba(0,0,0,0.5);
+}
+
+/* Btn ghost */
+body.light-theme .btn-ghost {
+  color: var(--text-2);
+  border-color: var(--border);
+}
+body.light-theme .btn-ghost:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-1);
+}
+body.light-theme .btn-icon { color: var(--text-2); }
+body.light-theme .btn-icon:hover { background: rgba(0,0,0,0.06); color: var(--text-1); }
+body.light-theme .btn-icon.active { color: var(--accent); }
+
+/* Scrollbar */
+body.light-theme ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.18); }
+
+/* Section titles */
+body.light-theme .section-title { color: var(--text-1); }
+body.light-theme .nav-label { color: var(--text-3); }
+body.light-theme .nav-item { color: var(--text-2); }
+body.light-theme .nav-item:hover { background: rgba(124,58,237,0.07); color: var(--text-1); }
+body.light-theme .nav-item.active { background: rgba(124,58,237,0.10); color: var(--accent); }
+
+/* Theme toggle icon in dropdown */
+body.light-theme .theme-icon-moon  { display: none; }
+body.light-theme .theme-icon-sun   { display: inline; }
+.theme-icon-sun { display: none; }
+.theme-icon-moon { display: inline; }
+
+/* Smooth theme transition */
+body, .sidebar, .topbar, .player, .track-card, .search-bar,
+.track-list-item, .profile-dropdown, .toast {
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 html { scroll-behavior: smooth; }
 
@@ -1265,7 +1524,8 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 
 .profile-dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  bottom: calc(100% + 8px);
+  left: 0;
   right: 0;
   min-width: 200px;
   background: rgba(8,8,20,0.98);
