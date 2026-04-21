@@ -957,8 +957,7 @@ function artistSvgAvatar(name, lang) {
     + `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">`
     + `<stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/>`
     + `</linearGradient></defs>`
-    + `<circle cx="100" cy="100" r="100" fill="url(#g)"/>`
-    + `<circle cx="100" cy="100" r="96" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>`
+    + `<rect width="200" height="200" fill="url(#g)"/>`
     + `<text x="100" y="116" text-anchor="middle" font-family="'Space Grotesk',sans-serif" font-size="72" font-weight="700" fill="white" opacity="0.95">${initials}</text>`
     + `</svg>`;
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
