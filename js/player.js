@@ -1455,19 +1455,24 @@ function toggleNowPlaying() {
 
 function toggleProfileDropdown() {
   const dd = document.getElementById('profileDropdown');
-  dd.classList.toggle('open');
-  setTimeout(() => {
-    if (dd.classList.contains('open')) {
+  const isOpen = dd.classList.toggle('open');
+  if (isOpen) {
+    // Close when tapping outside the dropdown or its two triggers
+    setTimeout(() => {
       document.addEventListener('click', closeDropdownOnOutside, { once: true });
-    }
-  }, 50);
+    }, 50);
+  }
+}
+
+function closeProfileDropdown() {
+  document.getElementById('profileDropdown').classList.remove('open');
 }
 
 function closeDropdownOnOutside(e) {
   const dd = document.getElementById('profileDropdown');
   const user = document.getElementById('sidebarUser');
   const topAvatar = document.getElementById('topbarAvatar');
-  if (!dd.contains(e.target) && !user.contains(e.target) && !topAvatar.contains(e.target)) {
+  if (!dd.contains(e.target) && !user.contains(e.target) && !(topAvatar && topAvatar.contains(e.target))) {
     dd.classList.remove('open');
   }
 }
@@ -1477,7 +1482,7 @@ function toggleTheme() {
   localStorage.setItem('musify_theme', isLight ? 'light' : 'dark');
   const label = document.getElementById('themeLabel');
   if (label) label.textContent = isLight ? 'Dark Theme' : 'Light Theme';
-  document.getElementById('profileDropdown').classList.remove('open');
+  closeProfileDropdown();
 }
 
 function logout() {
