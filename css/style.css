@@ -2211,6 +2211,245 @@ body.light-theme .signout-cancel:hover { background: var(--bg-card-hover); color
 .npp-controls { width:100%; max-width:380px; position: relative; z-index: 2; }
 
 /* ============================
+   ARTIST BROWSE
+   ============================ */
+
+.artist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 18px;
+  padding: 8px 0 28px;
+}
+
+/* Artist card — same look as track card */
+.artist-card {
+  cursor: pointer;
+  position: relative;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.25s ease;
+}
+.artist-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: var(--r);
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255,255,255,0.08) 38%,
+    rgba(167,139,250,0.22) 43%,
+    rgba(103,232,249,0.15) 48%,
+    rgba(249,168,212,0.13) 53%,
+    rgba(255,255,255,0.06) 58%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 0.25s ease, background-position 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  pointer-events: none;
+}
+.artist-card:hover::before {
+  opacity: 1;
+  background-position: -40% 0;
+}
+.artist-card:hover {
+  border-color: rgba(167,139,250,0.45);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(167,139,250,0.2),
+    0 0 28px rgba(167,139,250,0.15);
+}
+.artist-cover-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  background: var(--bg-2);
+}
+.artist-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.artist-card:hover .artist-avatar { transform: scale(1.06); }
+.artist-card-bottom {
+  padding: 8px 10px 11px;
+  position: relative;
+  z-index: 1;
+}
+.artist-name {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-1);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Artist detail header */
+.artist-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0 22px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.artist-detail-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+.artist-detail-info { flex: 1; min-width: 0; }
+.artist-detail-name {
+  font-family: var(--font-d);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.artist-detail-meta {
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+/* Albums grid */
+.artist-albums-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 16px;
+  padding: 8px 0 36px;
+}
+.album-card {
+  cursor: pointer;
+  position: relative;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.25s ease;
+}
+.album-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: var(--r);
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255,255,255,0.08) 38%,
+    rgba(167,139,250,0.22) 43%,
+    rgba(103,232,249,0.15) 48%,
+    rgba(249,168,212,0.13) 53%,
+    rgba(255,255,255,0.06) 58%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 0.25s ease, background-position 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  pointer-events: none;
+}
+.album-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-cyan));
+  border-radius: 0 0 var(--r) var(--r);
+  opacity: 0.7;
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.album-card:hover::before {
+  opacity: 1;
+  background-position: -40% 0;
+}
+.album-card:hover {
+  border-color: rgba(167,139,250,0.45);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(167,139,250,0.2),
+    0 0 28px rgba(167,139,250,0.15);
+}
+.album-card:hover::after { opacity: 1; }
+.album-card-cover-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  z-index: 2;
+  background: var(--bg-2);
+}
+.album-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--bg-2);
+  display: block;
+  transition: transform 0.35s ease;
+}
+.album-card:hover .album-card-cover { transform: scale(1.06); }
+.album-card-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  z-index: 2;
+}
+.album-card-play i {
+  font-size: 28px;
+  color: #fff;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}
+.album-card:hover .album-card-play { opacity: 1; }
+.album-card-info { padding: 10px 12px 14px; position: relative; z-index: 2; }
+.album-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.album-card-count {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 3px;
+}
+
+@media (max-width: 600px) {
+  .artist-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+  .artist-detail-avatar { width: 72px; height: 72px; }
+  .artist-detail-name { font-size: 20px; }
+  .artist-albums-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
+
+/* ============================
    MOBILE NAV
    ============================ */
 
