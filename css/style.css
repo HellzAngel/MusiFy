@@ -1483,18 +1483,56 @@ input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.2); }
 
   .sidebar {
     transform: translateX(-100%);
-    width: 250px;
+    width: 260px;
     z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   .sidebar.mobile-open {
     transform: translateX(0);
     box-shadow: 20px 0 60px rgba(0,0,0,0.8);
   }
 
+  /* Dark overlay behind open sidebar — tap to close */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-backdrop.active { display: block; }
+
   .main-content { margin-left:0; }
   .mobile-nav { display:flex; }
 
-  .topbar { padding: 0 14px; }
+  /* Topbar: hamburger | search (grows) | actions — tight single row */
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .topbar #menuBtn {
+    flex-shrink: 0;
+    order: 0;
+  }
+  .topbar .search-bar {
+    flex: 1;
+    min-width: 0;
+    order: 1;
+    padding: 6px 12px;
+  }
+  .topbar .search-bar input {
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+  .topbar .search-bar > i { display: none; }
+  .topbar .topbar-actions {
+    flex-shrink: 0;
+    order: 2;
+    gap: 2px;
+  }
   .content-area {
     padding: 14px;
     padding-bottom: calc(var(--player-height) + 70px);

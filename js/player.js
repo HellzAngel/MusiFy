@@ -594,7 +594,7 @@ function switchView(viewName, triggerEl) {
   if (viewEl) viewEl.classList.add('active');
 
   // Close mobile sidebar
-  document.getElementById('sidebar').classList.remove('mobile-open');
+  closeMobileSidebar();
 
   // Lazy load
   if (viewName === 'favorites') renderFavorites();
@@ -1488,7 +1488,35 @@ function logout() {
 // =============================================
 
 function toggleMobileSidebar() {
-  document.getElementById('sidebar').classList.toggle('mobile-open');
+  const sidebar = document.getElementById('sidebar');
+  const isOpen = sidebar.classList.toggle('mobile-open');
+  // Toggle hamburger → X icon
+  const menuBtn = document.getElementById('menuBtn');
+  if (menuBtn) {
+    const icon = menuBtn.querySelector('i');
+    if (icon) icon.className = isOpen ? 'fas fa-xmark' : 'fas fa-bars';
+  }
+  // Create backdrop once, then show/hide
+  let backdrop = document.getElementById('sidebarBackdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.id = 'sidebarBackdrop';
+    backdrop.className = 'sidebar-backdrop';
+    backdrop.addEventListener('click', closeMobileSidebar);
+    document.body.appendChild(backdrop);
+  }
+  backdrop.classList.toggle('active', isOpen);
+}
+
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  const menuBtn = document.getElementById('menuBtn');
+  if (menuBtn) {
+    const icon = menuBtn.querySelector('i');
+    if (icon) icon.className = 'fas fa-bars';
+  }
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
 }
 
 // Show hamburger on mobile
