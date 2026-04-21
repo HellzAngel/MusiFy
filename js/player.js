@@ -302,7 +302,7 @@ function _getPalette(t) {
   }
   pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 
-  // ShaderMaterial — soft glowing disc drawn in fragment shader via gl_PointCoord
+  // ShaderMaterial — each particle rendered as a tiny glowing orb (lit sphere illusion)
   const pMat = new THREE.ShaderMaterial({
     uniforms: {
       uColor:   { value: new THREE.Color(0xa78bfa) },
@@ -324,11 +324,24 @@ function _getPalette(t) {
         vec2  uv   = gl_PointCoord - 0.5;
         float dist = length(uv);
         if (dist > 0.5) discard;
-        float core = 1.0 - smoothstep(0.0,  0.18, dist);
-        float halo = 1.0 - smoothstep(0.18, 0.50, dist);
-        float a    = core * 1.0 + halo * 0.55;
-        a = clamp(a, 0.0, 1.0) * uOpacity;
-        gl_FragColor = vec4(uColor, a);
+
+        // Sphere body — darken toward edges like a real lit sphere
+        float body = 1.0 - smoothstep(0.0, 0.5, dist);
+        body = pow(body, 1.6);
+
+        // Specular highlight — offset from center to simulate top-left light
+        vec2  specUV   = gl_PointCoord - vec2(0.35, 0.30);
+        float specDist = length(specUV);
+        float spec     = 1.0 - smoothstep(0.0, 0.13, specDist);
+        spec = pow(spec, 2.0);
+
+        // Outer glow halo
+        float halo = 1.0 - smoothstep(0.35, 0.50, dist);
+        halo = pow(halo, 3.0) * 0.4;
+
+        vec3  col = uColor * body + vec3(1.0) * spec * 0.9 + uColor * halo;
+        float a   = clamp(body + halo, 0.0, 1.0) * uOpacity;
+        gl_FragColor = vec4(col, a);
       }
     `,
     transparent: true,
