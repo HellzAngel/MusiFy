@@ -21,6 +21,25 @@
   <!-- Toast Notifications -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <!-- Profile Dropdown — fixed, outside sidebar to avoid overflow/stacking issues -->
+  <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
+    <div class="dropdown-header">
+      <div class="d-name" id="ddName">—</div>
+      <div class="d-user" id="ddUser">—</div>
+    </div>
+    <button class="dropdown-item" onclick="switchView('favorites', document.querySelector('[data-view=favorites]')); closeProfileDropdown();">
+      <i class="fas fa-heart"></i> My Favorites
+    </button>
+    <button class="dropdown-item" onclick="toggleTheme()">
+      <i class="fas fa-moon theme-icon-moon"></i>
+      <i class="fas fa-sun theme-icon-sun"></i>
+      <span id="themeLabel">Light Theme</span>
+    </button>
+    <button class="dropdown-item danger" onclick="logout()">
+      <i class="fas fa-right-from-bracket"></i> Sign Out
+    </button>
+  </div>
+
   <!-- Main App -->
   <div id="app">
     <!-- SIDEBAR -->
@@ -62,25 +81,6 @@
           <div class="user-plan">Free Plan</div>
         </div>
         <i class="fas fa-ellipsis-vertical" style="color:var(--text-muted);font-size:13px;"></i>
-
-        <!-- Profile dropdown -->
-        <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
-          <div class="dropdown-header">
-            <div class="d-name" id="ddName">—</div>
-            <div class="d-user" id="ddUser">—</div>
-          </div>
-          <button class="dropdown-item" onclick="switchView('favorites', document.querySelector('[data-view=favorites]'))">
-            <i class="fas fa-heart"></i> My Favorites
-          </button>
-          <button class="dropdown-item" onclick="toggleTheme()">
-            <i class="fas fa-moon theme-icon-moon"></i>
-            <i class="fas fa-sun theme-icon-sun"></i>
-            <span id="themeLabel">Light Theme</span>
-          </button>
-          <button class="dropdown-item danger" onclick="logout()">
-            <i class="fas fa-right-from-bracket"></i> Sign Out
-          </button>
-        </div>
       </div>
     </aside>
 
@@ -115,21 +115,60 @@
         <div class="view active" id="view-home">
           <!-- Hero Banner -->
           <div class="hero-banner">
+            <!-- animated orb blobs -->
+            <div class="hb-orb hb-orb-1"></div>
+            <div class="hb-orb hb-orb-2"></div>
+            <div class="hb-orb hb-orb-3"></div>
+
             <div class="hero-content">
-              <div class="hero-label">Tamil · Malayalam · Hindi · English</div>
-              <div class="hero-title">Your Music,<br/>Every Language.</div>
-              <div class="hero-sub">Stream Tamil, Malayalam, Hindi & English hits free</div>
-              <button class="btn btn-primary" onclick="playAllFeatured()">
-                <i class="fas fa-play"></i> Play All
-              </button>
+              <!-- eyebrow pills -->
+              <div class="hb-pills">
+                <span class="hb-pill"><i class="fas fa-circle" style="color:#6ee7b7;font-size:7px;"></i> Live</span>
+                <span class="hb-pill">Tamil</span>
+                <span class="hb-pill">Malayalam</span>
+                <span class="hb-pill">Hindi</span>
+                <span class="hb-pill">English</span>
+              </div>
+
+              <!-- title -->
+              <div class="hb-title">Your Music,<br/><span class="hb-gradient">Every Language.</span></div>
+              <div class="hb-sub">Smart radio · Infinite playback · Zero cost</div>
+
+              <!-- actions -->
+              <div class="hb-actions">
+                <button class="hb-btn-play" onclick="playAllFeatured()">
+                  <i class="fas fa-play"></i> Play All
+                </button>
+                <button class="hb-btn-ghost" onclick="switchView('search', document.querySelector('[data-view=search]'))">
+                  <i class="fas fa-shuffle"></i> Discover
+                </button>
+              </div>
+
+              <!-- stats strip -->
+              <div class="hb-stats">
+                <div class="hb-stat"><span class="hb-stat-num">4</span><span class="hb-stat-lbl">Languages</span></div>
+                <div class="hb-stat-divider"></div>
+                <div class="hb-stat"><span class="hb-stat-num">∞</span><span class="hb-stat-lbl">Songs</span></div>
+                <div class="hb-stat-divider"></div>
+                <div class="hb-stat"><span class="hb-stat-num">0₹</span><span class="hb-stat-lbl">Cost</span></div>
+              </div>
             </div>
-            <div class="hero-waves">
-              <svg width="340" height="180" viewBox="0 0 340 180" fill="none">
-                <path d="M0,90 C60,45 110,135 170,90 C230,45 280,135 340,90" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
-                <path d="M0,110 C60,65 110,155 170,110 C230,65 280,155 340,110" stroke="#67e8f9" stroke-width="1.5" fill="none"/>
-                <path d="M0,70 C60,25 110,115 170,70 C230,25 280,115 340,70" stroke="#f9a8d4" stroke-width="1.5" fill="none"/>
-                <path d="M0,90 C40,70 80,110 120,90 C160,70 200,110 240,90 C280,70 310,110 340,90" stroke="#a78bfa" stroke-width="1" fill="none" opacity="0.4"/>
-              </svg>
+
+            <!-- right decoration: animated EQ + vinyl -->
+            <div class="hb-deco">
+              <div class="hb-vinyl">
+                <div class="hb-vinyl-inner"><i class="fas fa-music"></i></div>
+              </div>
+              <div class="hb-eq">
+                <span style="--d:0.0s"></span>
+                <span style="--d:0.1s"></span>
+                <span style="--d:0.2s"></span>
+                <span style="--d:0.3s"></span>
+                <span style="--d:0.15s"></span>
+                <span style="--d:0.25s"></span>
+                <span style="--d:0.05s"></span>
+                <span style="--d:0.35s"></span>
+              </div>
             </div>
           </div>
 
