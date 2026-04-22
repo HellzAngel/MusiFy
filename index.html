@@ -1,978 +1,2015 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>MusiFy — Login</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MovieSeer — Indian Cinema</title>
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --accent:    #a78bfa;
-      --accent2:   #67e8f9;
-      --accent3:   #f9a8d4;
-      --font:      'Space Grotesk', sans-serif;
-      --font-d:    'Syne', sans-serif;
+      --neon-purple: #a855f7;
+      --neon-pink:   #ec4899;
+      --neon-blue:   #06b6d4;
+      --neon-orange: #f97316;
+      --neon-gold:   #f59e0b;
+      --bg-dark:     #050510;
+      --card-bg:     rgba(15, 10, 40, 0.8);
     }
 
+    html { scroll-behavior: smooth; }
     body {
-      font-family: var(--font);
-      background: #06040f;
-      color: #e8e8f0;
-      min-height: 100vh;
-      height: 100vh;
-      overflow: hidden;
-      -webkit-font-smoothing: antialiased;
+      background: var(--bg-dark); color: #e2e8f0;
+      font-family: 'Rajdhani', sans-serif;
+      overflow-x: hidden; cursor: none;
     }
 
-    /* ── background canvas ── */
-    #loginCanvas {
-      position: fixed; inset: 0;
-      width: 100%; height: 100%;
-      z-index: 0;
+    /* ── Custom cursor ── */
+    #cursor {
+      position: fixed; top: 0; left: 0; z-index: 9999;
+      pointer-events: none; width: 20px; height: 20px;
+      border: 2px solid var(--neon-gold); border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width .15s, height .15s, border-color .15s;
+      mix-blend-mode: screen;
     }
+    #cursor-dot {
+      position: fixed; top: 0; left: 0; z-index: 9999;
+      pointer-events: none; width: 6px; height: 6px;
+      background: var(--neon-pink); border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    body:hover #cursor { width: 28px; height: 28px; border-color: var(--neon-pink); }
 
-    /* ── vivid gradient orbs that make the glass visible ── */
-    .orb-layer {
-      position: fixed; inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.75;
-    }
-    .orb-1 {
-      width: 520px; height: 520px;
-      background: radial-gradient(circle, #7c3aed, #4f46e5);
-      top: -120px; right: 60px;
-      animation: orbDrift1 12s ease-in-out infinite;
-    }
-    .orb-2 {
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, #0891b2, #06b6d4);
-      bottom: -80px; right: 120px;
-      animation: orbDrift2 14s ease-in-out infinite;
-    }
-    .orb-3 {
-      width: 300px; height: 300px;
-      background: radial-gradient(circle, #db2777, #9333ea);
-      top: 40%; right: 35%;
-      animation: orbDrift3 10s ease-in-out infinite;
-    }
-    .orb-4 {
-      width: 260px; height: 260px;
-      background: radial-gradient(circle, #059669, #0891b2);
-      bottom: 10%; right: 5%;
-      animation: orbDrift1 16s ease-in-out infinite reverse;
-    }
-    @keyframes orbDrift1 {
-      0%,100% { transform: translate(0,0) scale(1); }
-      33%  { transform: translate(-30px,20px) scale(1.05); }
-      66%  { transform: translate(20px,-25px) scale(0.95); }
-    }
-    @keyframes orbDrift2 {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%  { transform: translate(25px,-35px) scale(1.08); }
-    }
-    @keyframes orbDrift3 {
-      0%,100% { transform: translate(0,0); }
-      50%  { transform: translate(-20px,30px); }
-    }
+    #bg-canvas { position: fixed; inset: 0; z-index: 0; display: block; }
 
-    /* ── full-page layout ── */
-    .page-wrap {
-      position: fixed; inset: 0;
-      z-index: 2;
-      display: flex;
-      align-items: stretch;
-    }
-
-    /* ═══════════════════════════════════
-       RIGHT PANEL  (login card)
-    ═══════════════════════════════════ */
-    .right-panel {
-      width: 100%;
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 24px;
-      background: transparent;
-      position: relative;
-    }
-    /* orbs live inside right-panel so they paint behind the card */
-    .right-panel .orb-inner {
-      position: absolute; inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .right-panel .orb-inner .orb { position: absolute; border-radius: 50%; filter: blur(70px); }
-    .right-panel .orb-inner .ri-1 {
-      width: 420px; height: 420px;
-      background: radial-gradient(circle, rgba(124,58,237,0.9), rgba(79,70,229,0.6));
-      top: -140px; right: -60px;
-      animation: orbDrift1 12s ease-in-out infinite;
-    }
-    .right-panel .orb-inner .ri-2 {
-      width: 340px; height: 340px;
-      background: radial-gradient(circle, rgba(8,145,178,0.9), rgba(6,182,212,0.6));
-      bottom: -100px; left: -40px;
-      animation: orbDrift2 14s ease-in-out infinite;
-    }
-    .right-panel .orb-inner .ri-3 {
-      width: 260px; height: 260px;
-      background: radial-gradient(circle, rgba(219,39,119,0.85), rgba(147,51,234,0.6));
-      top: 45%; left: 25%;
-      animation: orbDrift3 10s ease-in-out infinite;
-    }
-
-    /* ── glass card — capped width so it stays elegant on wide screens —— */
-    .login-card {
-      width: 100%;
-      max-width: 460px;
-      position: relative;
-      z-index: 1;
-      /* gradient-glass: works regardless of stacking-context */
+    .overlay {
+      position: fixed; inset: 0; z-index: 1;
       background:
-        linear-gradient(135deg,
-          rgba(124,58,237,0.28)  0%,
-          rgba(79,70,229,0.18)  35%,
-          rgba(8,145,178,0.18)  65%,
-          rgba(219,39,119,0.15) 100%),
-        rgba(10,8,28,0.55);
-      border-radius: 28px;
-      border-top:    1px solid rgba(255,255,255,0.40);
-      border-left:   1px solid rgba(255,255,255,0.22);
-      border-right:  1px solid rgba(255,255,255,0.07);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      padding: 48px 44px;
-      box-shadow:
-        0 4px 24px rgba(124,58,237,0.25),
-        0 24px 64px rgba(0,0,0,0.55),
-        inset 0 1px 0 rgba(255,255,255,0.38),
-        inset 1px 0 0 rgba(255,255,255,0.18);
-      animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards;
-      overflow: hidden;
-    }
-
-    /* rainbow top-edge glow */
-    .login-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 10%; right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg,
-        transparent,
-        rgba(167,139,250,0.8) 25%,
-        rgba(103,232,249,0.8) 50%,
-        rgba(249,168,212,0.8) 75%,
-        transparent);
-      border-radius: 1px;
-    }
-
-    /* soft inner orb glow */
-    .login-card::after {
-      content: '';
-      position: absolute;
-      width: 360px; height: 360px;
-      border-radius: 50%;
-      background: radial-gradient(circle,
-        rgba(124,58,237,0.10) 0%,
-        rgba(103,232,249,0.06) 50%,
-        transparent 70%);
-      top: -120px; right: -100px;
+        radial-gradient(ellipse at 20% 50%, rgba(245,158,11,.07) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(168,85,247,.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(236,72,153,.06) 0%, transparent 50%);
       pointer-events: none;
-      animation: orbFloat 9s ease-in-out infinite;
-    }
-    @keyframes orbFloat {
-      0%,100% { transform: translate(0,0) scale(1); }
-      50%      { transform: translate(-16px,18px) scale(1.07); }
     }
 
-    @keyframes slideUp {
-      from { opacity:0; transform: translateY(28px); }
-      to   { opacity:1; transform: translateY(0); }
-    }
+    #app { position: relative; z-index: 2; }
 
-    /* ── card header ── */
-    .card-header { margin-bottom: 36px; position: relative; z-index: 1; }
-    .card-eyebrow {
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 2.5px; text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 10px;
+    /* ── SETUP BANNER ── */
+    #setup-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: linear-gradient(135deg, rgba(245,158,11,.15), rgba(168,85,247,.15));
+      border-bottom: 1px solid rgba(245,158,11,.35);
+      padding: 10px 24px; display: flex; align-items: center; gap: 14px;
+      font-size: .85rem; flex-wrap: wrap; justify-content: center;
+    }
+    #setup-banner strong { color: var(--neon-gold); font-family: 'Orbitron', sans-serif; font-size: .75rem; letter-spacing: 1.5px; }
+    #setup-banner a { color: var(--neon-blue); text-decoration: underline; }
+    #setup-banner input {
+      background: rgba(0,0,0,.4); border: 1px solid rgba(245,158,11,.4);
+      border-radius: 4px; color: #e2e8f0; padding: 5px 10px;
+      font-family: 'Rajdhani', sans-serif; font-size: .85rem; width: 240px; outline: none;
+    }
+    #setup-banner button {
+      padding: 5px 16px; border-radius: 4px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      color: #000; font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+    }
+    #setup-banner.hidden { display: none; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      backdrop-filter: blur(18px);
+      background: rgba(5, 5, 16, 0.55);
+      border-bottom: 1px solid rgba(245,158,11,.18);
+      transition: top .3s;
+    }
+    nav.with-banner { top: 46px; }
+    .logo {
+      font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.5rem;
+      background: linear-gradient(90deg, var(--neon-gold), var(--neon-pink), var(--neon-purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 3px; text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      color: #94a3b8; text-decoration: none; font-size: 1rem;
+      font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      transition: color .3s; position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 2px;
+      background: linear-gradient(90deg, var(--neon-gold), var(--neon-pink));
+      transition: width .3s;
+    }
+    .nav-links a:hover { color: #fff; }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-search {
       display: flex; align-items: center; gap: 8px;
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+      border-radius: 6px; padding: 8px 14px;
     }
-    .card-eyebrow::before {
-      content: '';
-      display: inline-block;
-      width: 18px; height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      border-radius: 2px;
+    .nav-search input {
+      background: none; border: none; outline: none; color: #e2e8f0;
+      font-family: 'Rajdhani', sans-serif; font-size: .95rem; width: 180px;
     }
-    .card-title {
-      font-family: var(--font-d);
-      font-size: 32px; font-weight: 800;
-      letter-spacing: -1px; color: #fff;
-      line-height: 1.1; margin-bottom: 8px;
+    .nav-search input::placeholder { color: #475569; }
+    .nav-search svg { opacity: .4; flex-shrink: 0; }
+    .nav-cta {
+      padding: 10px 24px; border-radius: 4px;
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      color: #000; font-family: 'Orbitron', sans-serif;
+      font-size: .8rem; letter-spacing: 2px; font-weight: 700;
+      text-decoration: none; text-transform: uppercase;
+      box-shadow: 0 0 20px rgba(245,158,11,.4);
+      transition: box-shadow .3s, transform .2s;
     }
-    .card-sub {
-      font-size: 14px;
-      color: rgba(255,255,255,0.38);
-    }
+    .nav-cta:hover { box-shadow: 0 0 35px rgba(249,115,22,.7); transform: translateY(-2px); }
 
-    /* ── form ── */
-    .login-form { display:flex; flex-direction:column; gap:16px; position: relative; z-index: 1; }
-
-    .form-group { display:flex; flex-direction:column; gap:8px; }
-    .form-label {
-      font-size: 11px; font-weight: 700;
-      color: rgba(255,255,255,0.45);
-      text-transform: uppercase; letter-spacing: 1px;
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      text-align: center; padding: 140px 24px 60px;
     }
-    .form-input-wrap { position: relative; }
-    .form-input-icon {
-      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      color: rgba(167,139,250,0.6); font-size: 14px; z-index: 1;
-      pointer-events: none;
+    .hero-badge {
+      display: inline-block; margin-bottom: 20px;
+      padding: 6px 18px; border-radius: 999px;
+      background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.4);
+      font-size: .8rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--neon-gold); animation: fadeDown .8s ease both;
     }
-    .form-input {
-      width: 100%;
-      padding: 14px 46px;
-      background: rgba(255,255,255,0.10);
-      border: 1px solid rgba(255,255,255,0.22);
-      border-radius: 14px;
-      color: #fff;
-      font-family: var(--font);
-      font-size: 14px;
-      outline: none;
-      transition: all 0.25s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
-    }
-    .form-input::placeholder { color: rgba(255,255,255,0.38); }
-    .form-input:focus {
-      border-color: rgba(167,139,250,0.7);
-      background: rgba(167,139,250,0.18);
-      box-shadow:
-        0 0 0 4px rgba(167,139,250,0.18),
-        inset 0 1px 0 rgba(255,255,255,0.20);
-    }
-    .form-input:hover:not(:focus) {
-      border-color: rgba(255,255,255,0.35);
-      background: rgba(255,255,255,0.16);
-    }
-    .form-input.error {
-      border-color: rgba(239,68,68,0.7);
-      box-shadow: 0 0 0 4px rgba(239,68,68,0.12);
-    }
-
-    .toggle-password {
-      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-      background: none; border: none;
-      color: rgba(255,255,255,0.28); cursor: pointer;
-      font-size: 14px; transition: color 0.2s; padding: 4px;
-    }
-    .toggle-password:hover { color: rgba(255,255,255,0.7); }
-
-    /* ── divider ── */
-    .form-divider {
-      height: 1px;
+    .hero h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.8rem, 8vw, 7rem); font-weight: 900; line-height: 1.05;
       background: linear-gradient(90deg,
-        transparent, rgba(255,255,255,0.1), transparent);
-      margin: 2px 0;
-    }
-
-    /* ── error ── */
-    .error-msg {
-      display: flex; align-items: center; gap: 9px;
-      padding: 11px 14px;
-      background: rgba(239,68,68,0.09);
-      border: 1px solid rgba(239,68,68,0.22);
-      border-radius: 12px;
-      backdrop-filter: blur(8px);
-      color: #fca5a5; font-size: 13px;
-      opacity: 0; transform: translateY(-6px);
-      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-      pointer-events: none;
-    }
-    .error-msg.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
-
-    /* ── submit button ── */
-    .login-btn {
-      width: 100%; padding: 15px;
-      background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #38bdf8 100%);
-      background-size: 200% auto;
-      border: none; border-radius: 14px;
-      color: #fff;
-      font-family: var(--font);
-      font-size: 15px; font-weight: 700;
-      cursor: pointer;
-      transition: all 0.35s ease;
-      position: relative; overflow: hidden;
-      margin-top: 6px;
-      letter-spacing: 0.4px;
-      box-shadow:
-        0 4px 24px rgba(124,58,237,0.40),
-        inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-    .login-btn:hover {
-      background-position: right center;
-      transform: translateY(-2px);
-      box-shadow:
-        0 12px 40px rgba(124,58,237,0.50),
-        inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-    .login-btn:active { transform: translateY(0); }
-    .login-btn.loading { pointer-events:none; opacity:0.75; }
-    .login-btn-text { transition: opacity 0.25s; }
-    .login-btn.loading .login-btn-text { opacity:0; }
-    .login-spinner {
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      opacity:0; transition: opacity 0.25s;
-    }
-    .login-btn.loading .login-spinner { opacity:1; }
-    .login-spinner i { animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* shimmer sweep on button */
-    .login-btn::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: linear-gradient(105deg,
-        transparent 30%, rgba(255,255,255,0.20) 50%, transparent 70%);
-      background-size: 200% 100%;
-      background-position: 200% 0;
-      transition: background-position 0.5s ease;
-    }
-    .login-btn:hover::after { background-position: -20% 0; }
-
-    /* ── hint strip ── */
-    .hint-strip {
-      margin-top: 22px;
-      display: flex; align-items: center; gap: 8px;
-      font-size: 12px; color: rgba(255,255,255,0.22);
-      position: relative; z-index: 1;
-    }
-    .hint-strip i { color: rgba(167,139,250,0.5); }
-
-    /* ═══════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════ */
-    @media (max-width: 860px) {
-      .right-panel { padding: 28px 20px; }
-      .right-panel .orb-inner .ri-1 { width: 340px; height: 340px; top: -80px; right: -80px; }
-      .right-panel .orb-inner .ri-2 { width: 280px; height: 280px; bottom: -60px; left: -60px; }
-      .right-panel .orb-inner .ri-3 { top: 55%; left: 30%; }
-      .login-card { padding: 40px 28px; }
-    }
-    @media (max-width: 480px) {
-      .right-panel { padding: 28px 20px; }
-      .card-title { font-size: 26px; }
-    }
-
-    /* ════════════════════════════════
-       LOADING SCREEN
-    ════════════════════════════════ */
-    #loadScreen {
-      position: fixed; inset: 0;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #06040f;
-      overflow: hidden;
-      /* fade out at 3.5s, gone by 4s */
-      animation: lsFadeOut 0.55s ease 3.45s forwards;
-    }
-    @keyframes lsFadeOut {
-      to { opacity: 0; pointer-events: none; }
-    }
-
-    /* background orbs */
-    .ls-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(90px);
-      pointer-events: none;
-    }
-    .ls-orb-1 {
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(124,58,237,0.7), rgba(79,70,229,0.4));
-      top: -150px; right: -80px;
-      animation: orbDrift1 10s ease-in-out infinite;
-    }
-    .ls-orb-2 {
-      width: 380px; height: 380px;
-      background: radial-gradient(circle, rgba(8,145,178,0.7), rgba(6,182,212,0.4));
-      bottom: -120px; left: -60px;
-      animation: orbDrift2 12s ease-in-out infinite;
-    }
-    .ls-orb-3 {
-      width: 280px; height: 280px;
-      background: radial-gradient(circle, rgba(219,39,119,0.6), rgba(147,51,234,0.4));
-      top: 45%; left: 20%;
-      animation: orbDrift3 9s ease-in-out infinite;
-    }
-
-    .ls-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 28px;
-      position: relative;
-      z-index: 1;
-      animation: lsEnter 0.7s cubic-bezier(0.16,1,0.3,1) both;
-    }
-    @keyframes lsEnter {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* logo */
-    .ls-logo {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .ls-logo-icon {
-      width: 64px; height: 64px;
-      background: linear-gradient(135deg, #7c3aed, #2563eb);
-      border-radius: 20px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 30px; color: #fff;
-      box-shadow:
-        0 0 40px rgba(124,58,237,0.6),
-        0 8px 32px rgba(0,0,0,0.5);
-      animation: logoPulse 2s ease-in-out infinite;
-    }
-    @keyframes logoPulse {
-      0%,100% { box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 8px 32px rgba(0,0,0,0.5); }
-      50%      { box-shadow: 0 0 70px rgba(124,58,237,0.9), 0 8px 32px rgba(0,0,0,0.5); }
-    }
-    .ls-logo-text {
-      font-family: var(--font-d);
-      font-size: 42px;
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      background: linear-gradient(90deg, #a78bfa, #67e8f9, #f9a8d4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+        #fff 0%,
+        var(--neon-gold) 15%,
+        var(--neon-orange) 28%,
+        var(--neon-pink) 42%,
+        var(--neon-purple) 55%,
+        var(--neon-blue) 68%,
+        var(--neon-gold) 80%,
+        #fff 100%);
+      background-size: 250% auto;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
-      background-size: 200% auto;
-      animation: gradShiftLS 3s linear infinite;
+      animation: fadeDown .9s ease .1s both, heroColorFlow 4s linear 1s infinite;
     }
-    @keyframes gradShiftLS {
+    @keyframes heroColorFlow {
       0%   { background-position: 0% center; }
-      100% { background-position: 200% center; }
+      100% { background-position: 250% center; }
+    }
+    .hero-sub {
+      margin-top: 16px; max-width: 580px;
+      font-size: 1.2rem; color: #94a3b8; line-height: 1.7;
+      animation: fadeDown 1s ease .2s both;
+    }
+    .hero-actions {
+      margin-top: 40px; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+      animation: fadeDown 1s ease .35s both;
+    }
+    .btn-primary {
+      padding: 14px 36px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      color: #000; font-family: 'Orbitron', sans-serif;
+      font-size: .85rem; font-weight: 700; letter-spacing: 2px;
+      border: none; cursor: pointer; text-decoration: none;
+      box-shadow: 0 0 30px rgba(245,158,11,.5);
+      transition: transform .2s, box-shadow .3s;
+    }
+    .btn-primary:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 0 50px rgba(249,115,22,.7); }
+    .btn-outline {
+      padding: 14px 36px; border-radius: 6px; background: transparent;
+      color: #e2e8f0; font-family: 'Orbitron', sans-serif;
+      font-size: .85rem; font-weight: 700; letter-spacing: 2px;
+      border: 1px solid rgba(245,158,11,.4); cursor: pointer; text-decoration: none;
+      transition: border-color .3s, color .3s, background .3s;
+    }
+    .btn-outline:hover { border-color: var(--neon-blue); color: var(--neon-blue); background: rgba(6,182,212,.06); }
+
+    .live-dot {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 18px; animation: fadeDown 1.1s ease .5s both;
+      font-size: .78rem; color: #64748b; letter-spacing: 1.5px;
+    }
+    .live-dot::before {
+      content: ''; width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e; box-shadow: 0 0 8px #22c55e;
+      animation: livePulse 1.5s ease-in-out infinite;
     }
 
-    /* EQ bars */
-    .ls-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 5px;
-      height: 40px;
+    .scroll-hint {
+      margin-top: 56px; animation: bounce 2s infinite;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      color: rgba(148,163,184,.5); font-size: .75rem; letter-spacing: 2px;
     }
-    .ls-bars span {
-      display: block;
-      width: 5px;
-      border-radius: 3px;
-      background: linear-gradient(to top, #7c3aed, #67e8f9);
-      animation: lsBar 1.1s ease-in-out infinite;
-      animation-delay: var(--d);
-    }
-    @keyframes lsBar {
-      0%,100% { height: 8px;  opacity: 0.5; }
-      50%      { height: 36px; opacity: 1; }
-    }
-
-    /* tagline */
-    .ls-tagline {
-      font-size: 14px;
-      color: rgba(255,255,255,0.35);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-
-    /* progress bar */
-    .ls-progress-track {
-      width: 200px;
-      height: 3px;
-      background: rgba(255,255,255,0.08);
+    .scroll-hint .bar {
+      width: 2px; height: 40px;
+      background: linear-gradient(to bottom, var(--neon-gold), transparent);
       border-radius: 2px;
-      overflow: hidden;
     }
-    .ls-progress-fill {
-      height: 100%;
-      width: 0%;
+
+    /* ── SECTIONS ── */
+    section { padding: 90px 48px; }
+    .section-head { text-align: center; margin-bottom: 60px; }
+    .section-head h2 {
+      font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 900;
+      background: linear-gradient(90deg, #fff 30%, var(--neon-gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .section-head p { color: #64748b; margin-top: 10px; font-size: 1rem; }
+    .accent-line {
+      width: 60px; height: 3px; margin: 14px auto 0;
+      background: linear-gradient(90deg, var(--neon-gold), var(--neon-pink));
       border-radius: 2px;
-      background: linear-gradient(90deg, #7c3aed, #67e8f9, #f9a8d4);
-      animation: lsProgress 3.4s cubic-bezier(0.4,0,0.2,1) forwards;
     }
-    @keyframes lsProgress {
-      0%   { width: 0%; }
-      80%  { width: 90%; }
-      100% { width: 100%; }
+
+    /* ── SKELETON ── */
+    .skeleton {
+      background: linear-gradient(90deg, rgba(245,158,11,.05) 25%, rgba(245,158,11,.12) 50%, rgba(245,158,11,.05) 75%);
+      background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 8px;
+    }
+    @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+    .skeleton-card { background: var(--card-bg); border: 1px solid rgba(245,158,11,.1); border-radius: 12px; overflow: hidden; }
+    .skeleton-img { width: 100%; aspect-ratio: 2/3; }
+    .skeleton-body { padding: 14px 16px 18px; }
+    .skeleton-line { height: 14px; margin-bottom: 10px; border-radius: 4px; }
+    .skeleton-line.short { width: 60%; }
+
+    /* ── MOVIE GRID ── */
+    .movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 28px;
+    }
+    .movie-card {
+      background: var(--card-bg); border: 1px solid rgba(245,158,11,.12);
+      border-radius: 12px; overflow: hidden;
+      transition: transform .3s, box-shadow .3s, border-color .3s;
+      cursor: pointer; position: relative;
+    }
+    .movie-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(245,158,11,.2);
+      border-color: var(--neon-gold);
+    }
+    .card-thumb { width: 100%; aspect-ratio: 2/3; overflow: hidden; position: relative; }
+    .card-thumb img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform .4s ease;
+    }
+    .movie-card:hover .card-thumb img { transform: scale(1.06); }
+    .card-thumb-fallback {
+      width: 100%; height: 100%;
+      background: linear-gradient(160deg, #180800 0%, #050510 50%, #0e0500 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 12px; text-align: center; gap: 5px;
+      position: relative; overflow: hidden;
+    }
+    .card-thumb-fallback::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(245,158,11,.08) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .cf-icon { font-size: 2rem; line-height: 1; position: relative; z-index: 1; }
+    .cf-title {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: .78rem;
+      color: var(--neon-gold); line-height: 1.25; position: relative; z-index: 1;
+      word-break: break-word;
+    }
+    .cf-lang { font-size: .62rem; color: #475569; position: relative; z-index: 1; }
+    .movie-card .badge {
+      position: absolute; top: 10px; right: 10px;
+      padding: 3px 10px; border-radius: 999px; font-size: .68rem; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase; z-index: 2;
+    }
+    .badge.new    { background: linear-gradient(135deg,#a855f7,#ec4899); color:#fff; }
+    .badge.top    { background: linear-gradient(135deg,#f59e0b,#f97316); color:#000; }
+    .badge.hd     { background: rgba(6,182,212,.3); border:1px solid var(--neon-blue); color:var(--neon-blue); }
+    .badge.now    { background: linear-gradient(135deg,#22c55e,#16a34a); color:#fff; }
+    .badge.lang   { background: rgba(245,158,11,.25); border:1px solid rgba(245,158,11,.5); color:var(--neon-gold); }
+    .badge.tv     { background: rgba(168,85,247,.2); border:1px solid rgba(168,85,247,.5); color:var(--neon-purple); }
+    .card-rank {
+      position: absolute; top: 10px; left: 10px; z-index: 2;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: rgba(5,5,16,.85); border: 1px solid rgba(245,158,11,.5);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif; font-size: .7rem; font-weight: 700;
+      color: var(--neon-gold);
+    }
+    .card-info { padding: 12px 14px 16px; }
+    .card-info h3 {
+      font-size: .95rem; font-weight: 700; color: #e2e8f0; margin-bottom: 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .card-meta span { font-size: .73rem; color: #64748b; }
+    .card-meta .score { color: var(--neon-gold); font-weight: 700; }
+    .card-genre { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
+    .genre-tag {
+      padding: 2px 7px; border-radius: 999px; font-size: .62rem; font-weight: 600;
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.22);
+      color: var(--neon-gold); letter-spacing: .5px; text-transform: uppercase;
+    }
+
+    .play-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(5,5,16,.55); opacity: 0; transition: opacity .3s; z-index: 3;
+    }
+    .movie-card:hover .play-overlay { opacity: 1; }
+    .play-btn {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 30px rgba(245,158,11,.7);
+      transform: scale(.8); transition: transform .3s;
+    }
+    .movie-card:hover .play-btn { transform: scale(1); }
+
+    /* ── FEATURED BANNER ── */
+    .featured-banner {
+      background: var(--card-bg); border: 1px solid rgba(245,158,11,.2);
+      border-radius: 16px; overflow: hidden;
+      display: grid; grid-template-columns: 1fr 1.2fr; min-height: 380px; position: relative;
+    }
+    .featured-art { position: relative; overflow: hidden; min-height: 280px; }
+    .featured-art img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      filter: brightness(.75); transition: transform .5s ease;
+    }
+    .featured-banner:hover .featured-art img { transform: scale(1.04); }
+    .featured-art::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(to right, rgba(5,5,16,.5) 0%, transparent 100%),
+                  linear-gradient(135deg, rgba(245,158,11,.1), transparent);
+    }
+    .featured-art-fallback {
+      background: linear-gradient(135deg,#1a0a00,#05051a,#1a1200);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 8rem; width: 100%; height: 100%;
+    }
+    .featured-content { padding: 48px 40px; display: flex; flex-direction: column; justify-content: center; }
+    .featured-tag {
+      display: inline-block; margin-bottom: 12px; padding: 4px 14px; border-radius: 999px;
+      background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.4);
+      font-size: .7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--neon-gold);
+    }
+    .featured-content h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 900; line-height: 1.2;
+      background: linear-gradient(135deg, #fff, var(--neon-gold));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .featured-desc {
+      margin-top: 14px; color: #64748b; font-size: 1rem; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .featured-stats { margin-top: 24px; display: flex; gap: 28px; }
+    .stat { display: flex; flex-direction: column; }
+    .stat-val { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--neon-gold); }
+    .stat-lbl { font-size: .7rem; letter-spacing: 2px; color: #64748b; text-transform: uppercase; }
+    .featured-actions { margin-top: 28px; display: flex; gap: 14px; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 12px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 8px 22px; border-radius: 999px; font-family: 'Rajdhani', sans-serif;
+      font-size: .9rem; font-weight: 700; letter-spacing: 1px;
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+      color: #64748b; cursor: pointer; transition: all .25s;
+    }
+    .tab-btn.active, .tab-btn:hover {
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      border-color: transparent; color: #000;
+      box-shadow: 0 0 18px rgba(245,158,11,.4);
+    }
+
+    /* ── CATEGORIES ── */
+    .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+    .cat-card {
+      background: var(--card-bg); border: 1px solid rgba(245,158,11,.1);
+      border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: transform .3s, border-color .3s, box-shadow .3s;
+    }
+    .cat-card:hover { transform: translateY(-5px); border-color: var(--neon-gold); box-shadow: 0 10px 40px rgba(245,158,11,.2); }
+    .cat-icon { font-size: 2rem; margin-bottom: 10px; }
+    .cat-card h3 { font-size: .9rem; font-weight: 700; color: #e2e8f0; }
+    .cat-card p { font-size: .72rem; color: #64748b; margin-top: 4px; }
+
+    /* ── SEARCH SECTION ── */
+    #search-section { display: none; padding: 90px 48px; }
+
+    /* ── MARQUEE ── */
+    .marquee-wrap {
+      overflow: hidden; padding: 20px 0;
+      border-top: 1px solid rgba(245,158,11,.1);
+      border-bottom: 1px solid rgba(245,158,11,.1);
+    }
+    .marquee-track { display: flex; gap: 48px; width: max-content; animation: marquee 28s linear infinite; }
+    .marquee-item {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'Orbitron', sans-serif; font-size: .85rem;
+      color: rgba(148,163,184,.45); letter-spacing: 2px; white-space: nowrap;
+    }
+    .marquee-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--neon-gold); flex-shrink: 0; }
+
+    /* ── ERROR ── */
+    .error-state { grid-column: 1/-1; text-align: center; padding: 40px; color: #64748b; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 48px; text-align: center;
+      border-top: 1px solid rgba(245,158,11,.1);
+      background: rgba(5,5,16,.6);
+    }
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.2rem;
+      background: linear-gradient(90deg, var(--neon-gold), var(--neon-pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      letter-spacing: 3px; display: inline-block; margin-bottom: 12px;
+    }
+    footer p { color: #475569; font-size: .85rem; }
+    .footer-links { display: flex; gap: 24px; justify-content: center; margin-top: 16px; }
+    .footer-links a { color: #475569; text-decoration: none; font-size: .8rem; transition: color .3s; }
+    .footer-links a:hover { color: var(--neon-gold); }
+    .api-credit { margin-top: 14px; font-size: .75rem; color: #334155; }
+    .api-credit a { color: var(--neon-gold); text-decoration: none; }
+
+    /* ── VIDEO PLAYER MODAL ── */
+    #player-modal {
+      position: fixed; inset: 0; z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(3,3,12,.92); backdrop-filter: blur(14px);
+      opacity: 0; pointer-events: none; transition: opacity .35s ease;
+    }
+    #player-modal.open { opacity: 1; pointer-events: all; }
+    .modal-inner {
+      width: 92vw; max-width: 1100px;
+      background: rgba(10,6,20,.97);
+      border: 1px solid rgba(245,158,11,.2);
+      border-radius: 16px; overflow: visible;
+      display: grid; grid-template-columns: 1fr 320px;
+      max-height: 88vh;
+      transform: scale(.93); transition: transform .35s ease;
+      box-shadow: 0 30px 90px rgba(0,0,0,.7), 0 0 60px rgba(245,158,11,.1);
+    }
+    #player-modal.open .modal-inner { transform: scale(1); overflow: hidden; }
+
+    .modal-left-col { display: flex; flex-direction: column; overflow: visible; min-height: 0; }
+    .modal-left-col > *:not(.modal-video-wrap) { overflow: hidden; }
+
+    /* Player tabs */
+    .player-tabs {
+      display: flex; flex-shrink: 0;
+      background: rgba(5,5,16,.95);
+      border-bottom: 1px solid rgba(245,158,11,.15);
+    }
+    .ptab {
+      flex: 1; padding: 12px 0; border: none; background: none;
+      color: #64748b; font-family: 'Orbitron', sans-serif;
+      font-size: .7rem; font-weight: 700; letter-spacing: 1.5px;
+      cursor: pointer; transition: color .2s, background .2s;
+      border-bottom: 2px solid transparent;
+    }
+    .ptab.active { color: var(--neon-gold); background: rgba(245,158,11,.06); border-bottom-color: var(--neon-gold); }
+    .ptab:not(.active):hover { color: #94a3b8; }
+
+    /* Video pane */
+    .modal-video-wrap {
+      position: relative; background: #000;
+      aspect-ratio: 16/9; width: 100%; flex-shrink: 0;
+    }
+    .modal-video-wrap iframe {
+      position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+    }
+    .modal-video-loading {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center; background: #000;
+    }
+    .modal-spinner {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 3px solid rgba(245,158,11,.2);
+      border-top-color: var(--neon-gold);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-no-video {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; background: linear-gradient(135deg,#0d0800,#05051a);
+      color: #475569;
+    }
+    .modal-no-video .big-emoji { font-size: 3.5rem; }
+    .modal-no-video .no-title {
+      font-family: 'Orbitron', sans-serif; font-size: .8rem; color: #64748b; letter-spacing: 2px;
+    }
+
+    /* Source selector strip */
+    .src-strip {
+      flex-shrink: 0; padding: 10px 14px;
+      background: rgba(5,5,16,.9);
+      border-top: 1px solid rgba(245,158,11,.1);
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .src-strip-label { font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 2px; color: #475569; }
+    .src-btn {
+      padding: 5px 12px; border-radius: 4px; font-size: .68rem;
+      font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: .5px;
+      background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2);
+      color: #64748b; cursor: pointer; transition: all .2s;
+    }
+    .src-btn:hover, .src-btn.active {
+      background: linear-gradient(135deg, var(--neon-gold), var(--neon-orange));
+      border-color: transparent; color: #000;
+    }
+
+    /* TV Episode Picker */
+    #tv-controls { flex-shrink: 0; background: rgba(5,5,16,.9); border-top: 1px solid rgba(168,85,247,.15); }
+    .tv-season-row {
+      padding: 9px 14px; display: flex; gap: 10px; align-items: center;
+      border-bottom: 1px solid rgba(168,85,247,.1);
+    }
+    #season-select {
+      background: rgba(168,85,247,.1); border: 1px solid rgba(168,85,247,.3);
+      color: var(--neon-purple); padding: 4px 10px; border-radius: 4px;
+      font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+      cursor: pointer; outline: none; letter-spacing: .5px;
+    }
+    #season-select option { background: #0a0614; color: #e2e8f0; }
+    #ep-count-label { font-family: 'Orbitron', sans-serif; font-size: .6rem; letter-spacing: 1px; color: #475569; margin-left: auto; }
+    #episode-list { max-height: 160px; overflow-y: auto; padding: 6px 8px; display: flex; flex-direction: column; gap: 3px; }
+    #episode-list::-webkit-scrollbar { width: 3px; }
+    #episode-list::-webkit-scrollbar-thumb { background: rgba(168,85,247,.3); border-radius: 2px; }
+    .ep-btn {
+      display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px;
+      background: none; border: 1px solid transparent; color: #64748b;
+      cursor: pointer; text-align: left; width: 100%;
+      font-family: 'Rajdhani', sans-serif; font-size: .85rem; font-weight: 500;
+      transition: all .18s;
+    }
+    .ep-btn:hover { background: rgba(168,85,247,.08); border-color: rgba(168,85,247,.2); color: #e2e8f0; }
+    .ep-btn.active { background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.5); color: var(--neon-purple); }
+    .ep-num { font-family: 'Orbitron', sans-serif; font-size: .58rem; font-weight: 700; color: var(--neon-purple); min-width: 28px; }
+    .ep-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Fullscreen button (mobile only) */
+    #fs-btn {
+      display: none;
+      position: absolute; bottom: 10px; right: 10px; z-index: 20;
+      width: 36px; height: 36px; border-radius: 8px;
+      background: rgba(5,5,16,.8); border: 1px solid rgba(245,158,11,.4);
+      color: var(--neon-gold); font-size: 1rem; cursor: pointer;
+      align-items: center; justify-content: center;
+    }
+
+    /* Fullscreen — let iframe fill screen natively */
+    .modal-video-wrap:-webkit-full-screen,
+    .modal-video-wrap:-moz-full-screen,
+    .modal-video-wrap:fullscreen {
+      width: 100vw; height: 100vh; aspect-ratio: unset;
+      position: fixed; inset: 0; z-index: 99999; background: #000;
+    }
+    .modal-video-wrap iframe:-webkit-full-screen,
+    .modal-video-wrap iframe:-moz-full-screen,
+    .modal-video-wrap iframe:fullscreen {
+      width: 100%; height: 100%; border: none;
+    }
+
+    /* Info sidebar */
+    .modal-info {
+      padding: 24px 20px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+      border-left: 1px solid rgba(245,158,11,.1);
+    }
+    .modal-info::-webkit-scrollbar { width: 4px; }
+    .modal-info::-webkit-scrollbar-thumb { background: rgba(245,158,11,.3); border-radius: 2px; }
+    .modal-poster {
+      width: 100%; aspect-ratio: 2/3; object-fit: cover;
+      border-radius: 10px; display: block;
+    }
+    .modal-poster-placeholder {
+      width: 100%; aspect-ratio: 2/3; border-radius: 10px;
+      background: linear-gradient(135deg,#1a100a,#0a0a1a);
+      display: flex; align-items: center; justify-content: center; font-size: 3rem;
+    }
+    .modal-title {
+      font-family: 'Orbitron', sans-serif; font-size: .95rem; font-weight: 700;
+      color: #f1f5f9; line-height: 1.3;
+    }
+    .modal-score { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--neon-gold); }
+    .modal-meta-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .modal-meta-item { font-size: .73rem; color: #64748b; }
+    .modal-synopsis {
+      font-size: .85rem; color: #64748b; line-height: 1.65;
+      display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .modal-genres { display: flex; gap: 6px; flex-wrap: wrap; }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px; z-index: 10;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(5,5,16,.85); border: 1px solid rgba(245,158,11,.3);
+      color: #e2e8f0; font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s;
+    }
+    .modal-close:hover { background: rgba(245,158,11,.15); border-color: var(--neon-gold); }
+    .modal-yt-thumb {
+      position: absolute; inset: 0; cursor: pointer;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #000; overflow: hidden;
+    }
+    .modal-yt-thumb img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; opacity: .55; transition: opacity .3s;
+    }
+    .modal-yt-thumb:hover img { opacity: .35; }
+    .modal-yt-play {
+      position: relative; z-index: 2;
+      width: 72px; height: 72px; border-radius: 50%;
+      background: rgba(255,0,0,.9);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 40px rgba(255,0,0,.6);
+      transition: transform .25s, box-shadow .25s;
+    }
+    .modal-yt-thumb:hover .modal-yt-play { transform: scale(1.12); box-shadow: 0 0 60px rgba(255,0,0,.9); }
+    .modal-yt-label {
+      position: relative; z-index: 2; margin-top: 16px;
+      font-family: 'Orbitron', sans-serif; font-size: .7rem;
+      letter-spacing: 2px; color: rgba(255,255,255,.8);
+    }
+    .modal-skeleton-line { height: 14px; border-radius: 4px; margin-bottom: 8px; }
+
+    @media (max-width: 900px) {
+      .modal-inner {
+        grid-template-columns: 1fr;
+        max-height: 96vh;
+        width: 98vw;
+        border-radius: 12px;
+      }
+      .modal-info { display: none; }
+      .modal-video-wrap { aspect-ratio: 16/9; }
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(8px);} }
+    @keyframes marquee { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+    @keyframes livePulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(.7);} }
+
+    .reveal { opacity:0; transform:translateY(40px); transition:opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    /* ════════════════════════════════════════
+       RESPONSIVE — TABLET (≤900px)
+    ════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      /* Nav */
+      nav { padding: 12px 18px; gap: 10px; }
+      .nav-links, .nav-cta { display: none; }
+      .nav-search input { width: 130px; }
+
+      /* Sections */
+      section, #search-section { padding: 56px 20px; }
+
+      /* Hero */
+      .hero { padding: 120px 20px 50px; }
+      .hero h1 { font-size: clamp(2rem, 10vw, 3.2rem); }
+      .hero-sub { font-size: 1rem; }
+      .hero-actions { gap: 12px; }
+      .btn-primary, .btn-outline { padding: 12px 22px; font-size: .75rem; }
+
+      /* Featured */
+      .featured-banner { grid-template-columns: 1fr; }
+      .featured-art { min-height: 200px; }
+      .featured-content { padding: 28px 24px; }
+      .featured-content h2 { font-size: 1.3rem; }
+      .featured-stats { gap: 18px; }
+
+      /* Cards */
+      .movie-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+
+      /* Tabs */
+      .tabs { gap: 8px; }
+      .tab-btn { padding: 7px 14px; font-size: .8rem; }
+
+      /* Genre grid */
+      .cat-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+
+      /* Footer */
+      footer { padding: 36px 20px; }
+      .footer-links { flex-wrap: wrap; gap: 14px; }
+    }
+
+    /* ════════════════════════════════════════
+       RESPONSIVE — MOBILE (≤600px)
+    ════════════════════════════════════════ */
+    @media (max-width: 600px) {
+      /* Disable custom cursor on touch */
+      #cursor, #cursor-dot { display: none; }
+      body { cursor: auto; }
+
+      /* Setup banner */
+      #setup-banner { padding: 8px 14px; gap: 8px; font-size: .78rem; }
+      #setup-banner input { width: 100%; }
+      #setup-banner button { width: 100%; padding: 8px; }
+
+      /* Nav */
+      nav { padding: 10px 16px; }
+      .logo { font-size: 1.15rem; letter-spacing: 2px; }
+      .nav-search { padding: 7px 10px; }
+      .nav-search input { width: 100px; font-size: .85rem; }
+
+      /* Hero */
+      .hero { padding: 100px 16px 40px; }
+      .hero-badge { font-size: .68rem; padding: 5px 14px; }
+      .hero h1 { font-size: clamp(1.8rem, 12vw, 2.6rem); }
+      .hero-sub { font-size: .9rem; }
+      .hero-actions { flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+      .btn-primary, .btn-outline { width: 100%; max-width: 280px; text-align: center; padding: 13px; }
+      .scroll-hint { margin-top: 32px; }
+
+      /* Marquee */
+      .marquee-item { font-size: .72rem; gap: 8px; }
+
+      /* Sections */
+      section, #search-section { padding: 44px 14px; }
+      .section-head h2 { font-size: 1.4rem; }
+      .section-head p { font-size: .88rem; }
+
+      /* Featured */
+      .featured-banner { border-radius: 10px; }
+      .featured-art { min-height: 160px; }
+      .featured-content { padding: 20px 16px; }
+      .featured-content h2 { font-size: 1.1rem; }
+      .featured-tag { font-size: .62rem; }
+      .featured-desc { font-size: .85rem; -webkit-line-clamp: 3; }
+      .featured-stats { gap: 14px; }
+      .stat-val { font-size: 1.1rem; }
+      .stat-lbl { font-size: .6rem; }
+      .featured-actions { flex-direction: column; gap: 8px; }
+      .featured-actions .btn-primary,
+      .featured-actions .btn-outline { padding: 11px 20px; font-size: .72rem; }
+
+      /* Movie grid */
+      .movie-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .card-info h3 { font-size: .82rem; }
+      .card-meta span { font-size: .65rem; }
+      .cf-title { font-size: .7rem; }
+
+      /* Tabs */
+      .tabs { gap: 6px; padding: 0 2px; }
+      .tab-btn { padding: 6px 12px; font-size: .72rem; }
+
+      /* Genre grid */
+      .cat-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .cat-card { padding: 14px 8px; }
+      .cat-icon { font-size: 1.4rem; margin-bottom: 6px; }
+      .cat-card h3 { font-size: .72rem; }
+      .cat-card p { display: none; }
+
+      /* Player modal */
+      .modal-inner {
+        width: 100vw; height: 100dvh; max-height: 100dvh;
+        border-radius: 0; margin: 0;
+        grid-template-columns: 1fr;
+      }
+      .modal-info { display: none; }
+      .modal-left-col { height: 100%; overflow: hidden; }
+      .modal-video-wrap { aspect-ratio: 16/9; width: 100%; max-height: 56vw; flex-shrink: 0; }
+      .modal-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .ptab { font-size: .62rem; padding: 10px 0; letter-spacing: 1px; }
+      .src-strip { padding: 8px 10px; gap: 6px; }
+      .src-btn { padding: 4px 9px; font-size: .6rem; }
+      .src-strip-label { display: none; }
+      .modal-close { top: 8px; right: 8px; width: 30px; height: 30px; font-size: .9rem; }
+      #fs-btn { display: flex; }
+
+      /* Footer */
+      footer { padding: 28px 16px; }
+      .footer-links { gap: 12px; }
+    }
+
+    /* ════════════════════════════════════════
+       RESPONSIVE — SMALL PHONES (≤380px)
+    ════════════════════════════════════════ */
+    @media (max-width: 380px) {
+      .movie-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+      .cat-grid { grid-template-columns: repeat(4, 1fr); }
+      .nav-search input { width: 80px; }
+      .hero h1 { font-size: 1.7rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ════════ LOADING SCREEN ════════ -->
-  <div id="loadScreen">
-    <!-- background orbs (same palette as login) -->
-    <div class="ls-orb ls-orb-1"></div>
-    <div class="ls-orb ls-orb-2"></div>
-    <div class="ls-orb ls-orb-3"></div>
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="overlay"></div>
 
-    <div class="ls-inner">
-      <!-- logo mark -->
-      <div class="ls-logo">
-        <div class="ls-logo-icon">
-          <i class="fas fa-headphones"></i>
+<!-- ── TMDB API KEY SETUP BANNER ── -->
+<div id="setup-banner">
+  <strong>⚙ TMDB API KEY REQUIRED</strong>
+  <span>Get your free key at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">themoviedb.org → API</a> (free, instant)</span>
+  <input id="key-input" type="text" placeholder="Paste your TMDB API v3 key here…" />
+  <button onclick="saveKey()">SAVE &amp; LOAD</button>
+</div>
+
+<div id="app">
+
+  <!-- ── NAV ── -->
+  <nav id="main-nav" class="with-banner">
+    <a class="logo" href="#">MOVIESEER</a>
+    <ul class="nav-links">
+      <li><a href="#trending">Trending</a></li>
+      <li><a href="#bollywood">Bollywood</a></li>
+      <li><a href="#regional">Regional</a></li>
+      <li><a href="#series">Series</a></li>
+      <li><a href="#top-rated">Top Rated</a></li>
+    </ul>
+    <div class="nav-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="search-input" type="text" placeholder="Search Indian movies…" autocomplete="off" />
+    </div>
+    <a class="nav-cta" href="#trending">Watch Now</a>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-badge">🎬 Bollywood · Tamil · Telugu · Malayalam</div>
+    <h1>Indian Cinema<br>Reimagined</h1>
+    <p class="hero-sub">Stream Bollywood blockbusters, Tamil thrillers, Telugu action, and Malayalam masterpieces — all in one place.</p>
+    <div class="hero-actions">
+      <a class="btn-primary" href="#trending">Explore Now</a>
+      <a class="btn-outline" href="#bollywood">Bollywood</a>
+    </div>
+    <div class="live-dot">LIVE DATA FROM TMDB</div>
+    <div class="scroll-hint"><div class="bar"></div>SCROLL</div>
+  </section>
+
+  <!-- ── SEARCH RESULTS ── -->
+  <section id="search-section">
+    <div class="section-head">
+      <h2>Search Results</h2>
+      <p id="search-query-label"></p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="search-results" class="movie-grid"></div>
+  </section>
+
+  <!-- ── MARQUEE ── -->
+  <div class="marquee-wrap">
+    <div id="marquee-track" class="marquee-track">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- ── FEATURED ── -->
+  <section id="featured" style="padding:90px 48px;">
+    <div class="section-head reveal">
+      <h2>Featured Right Now</h2>
+      <p>The most popular Indian film this week</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="featured-banner" class="featured-banner reveal">
+      <div class="skeleton" style="min-height:380px;"></div>
+      <div class="featured-content">
+        <span class="skeleton skeleton-line" style="width:120px;height:22px;margin-bottom:16px;"></span>
+        <span class="skeleton skeleton-line" style="width:80%;height:32px;margin-bottom:10px;"></span>
+        <span class="skeleton skeleton-line" style="height:12px;margin-bottom:8px;"></span>
+        <span class="skeleton skeleton-line" style="height:12px;margin-bottom:8px;"></span>
+        <span class="skeleton skeleton-line short" style="height:12px;"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TRENDING ── -->
+  <section id="trending">
+    <div class="section-head reveal">
+      <h2>Trending in India</h2>
+      <p>Most watched Indian movies this week</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="trending-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── NOW PLAYING ── -->
+  <section id="now-playing">
+    <div class="section-head reveal">
+      <h2>Now in Cinemas</h2>
+      <p>Currently showing in Indian theatres</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="nowplaying-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── BOLLYWOOD ── -->
+  <section id="bollywood">
+    <div class="section-head reveal">
+      <h2>Bollywood</h2>
+      <p>Top Hindi blockbusters</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="bollywood-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── WEB SERIES ── -->
+  <section id="series">
+    <div class="section-head reveal">
+      <h2>Web Series &amp; Shows</h2>
+      <p>Binge-worthy Indian originals</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="series-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── REGIONAL ── -->
+  <section id="regional">
+    <div class="section-head reveal">
+      <h2>Regional Cinema</h2>
+      <p>South Indian & beyond</p>
+      <div class="accent-line"></div>
+    </div>
+    <div class="tabs reveal" id="regional-tabs">
+      <button class="tab-btn active" data-lang="ta">Tamil</button>
+      <button class="tab-btn" data-lang="te">Telugu</button>
+      <button class="tab-btn" data-lang="ml">Malayalam</button>
+      <button class="tab-btn" data-lang="kn">Kannada</button>
+      <button class="tab-btn" data-lang="pa">Punjabi</button>
+      <button class="tab-btn" data-lang="bn">Bengali</button>
+    </div>
+    <div id="regional-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── GENRES ── -->
+  <section id="genres">
+    <div class="section-head reveal">
+      <h2>Browse by Genre</h2>
+      <p>Click any genre to search live</p>
+      <div class="accent-line"></div>
+    </div>
+    <div class="cat-grid reveal">
+      <div class="cat-card" data-genre="28"><div class="cat-icon">⚔️</div><h3>Action</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="10749"><div class="cat-icon">💕</div><h3>Romance</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="18"><div class="cat-icon">🎭</div><h3>Drama</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="35"><div class="cat-icon">😂</div><h3>Comedy</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="53"><div class="cat-icon">🔪</div><h3>Thriller</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="27"><div class="cat-icon">👻</div><h3>Horror</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="878"><div class="cat-icon">🚀</div><h3>Sci-Fi</h3><p>Search →</p></div>
+      <div class="cat-card" data-genre="80"><div class="cat-icon">🕵️</div><h3>Crime</h3><p>Search →</p></div>
+    </div>
+  </section>
+
+  <!-- ── TOP RATED ── -->
+  <section id="top-rated">
+    <div class="section-head reveal">
+      <h2>Top Rated</h2>
+      <p>All-time classics from India</p>
+      <div class="accent-line"></div>
+    </div>
+    <div id="toprated-grid" class="movie-grid reveal"></div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div class="footer-logo">MOVIESEER</div>
+    <p>© 2026 MovieSeer — Indian Cinema, Reimagined.</p>
+    <div class="footer-links">
+      <a href="#">About</a><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a>
+    </div>
+    <p class="api-credit">
+      Movie data powered by <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB API</a> — free & open.
+    </p>
+  </footer>
+
+  <!-- ── VIDEO PLAYER MODAL ── -->
+  <div id="player-modal" role="dialog" aria-modal="true" aria-label="Movie player" allowfullscreen>
+    <div class="modal-inner">
+      <button class="modal-close" onclick="closePlayer()" aria-label="Close">✕</button>
+
+      <div class="modal-left-col">
+        <!-- Tabs -->
+        <div class="player-tabs" id="player-tabs">
+          <button class="ptab active" data-tab="stream">▶ STREAM</button>
+          <button class="ptab" data-tab="trailer">🎬 TRAILER</button>
         </div>
-        <span class="ls-logo-text">MusiFy</span>
+
+        <!-- Stream pane -->
+        <div id="pane-stream" class="modal-video-wrap">
+          <div class="modal-video-loading"><div class="modal-spinner"></div></div>
+          <button id="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        </div>
+
+        <!-- Trailer pane -->
+        <div id="pane-trailer" class="modal-video-wrap" style="display:none;"></div>
+
+        <!-- Source selector -->
+        <div class="src-strip" id="src-strip">
+          <span class="src-strip-label">SOURCE:</span>
+        </div>
+
+        <!-- TV episode picker (hidden for movies) -->
+        <div id="tv-controls" style="display:none;">
+          <div class="tv-season-row">
+            <span class="src-strip-label">SEASON</span>
+            <select id="season-select"></select>
+            <span id="ep-count-label"></span>
+          </div>
+          <div id="episode-list"></div>
+        </div>
       </div>
 
-      <!-- animated EQ bars -->
-      <div class="ls-bars">
-        <span style="--d:0.0s"></span>
-        <span style="--d:0.1s"></span>
-        <span style="--d:0.2s"></span>
-        <span style="--d:0.3s"></span>
-        <span style="--d:0.15s"></span>
-        <span style="--d:0.25s"></span>
-        <span style="--d:0.05s"></span>
-        <span style="--d:0.35s"></span>
-        <span style="--d:0.18s"></span>
-        <span style="--d:0.28s"></span>
-      </div>
-
-      <div class="ls-tagline">Your music, every language.</div>
-
-      <!-- progress bar -->
-      <div class="ls-progress-track">
-        <div class="ls-progress-fill"></div>
+      <!-- Info sidebar -->
+      <div class="modal-info" id="modal-info">
+        <div class="skeleton" style="width:100%;aspect-ratio:2/3;border-radius:10px;margin-bottom:12px;"></div>
+        <div class="skeleton modal-skeleton-line" style="width:90%"></div>
+        <div class="skeleton modal-skeleton-line" style="width:65%"></div>
+        <div class="skeleton modal-skeleton-line" style="width:80%"></div>
       </div>
     </div>
   </div>
 
-  <!-- Three.js canvas -->
-  <canvas id="loginCanvas"></canvas>
+</div><!-- /app -->
 
-  <!-- Vivid gradient orbs — give the glass something colorful to blur -->
-  <div class="orb-layer">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+'use strict';
 
-  <!-- Full-page centered layout -->
-  <div class="page-wrap">
+// ═══════════════════════════════════════════════════════
+//  THREE.JS BACKGROUND
+// ═══════════════════════════════════════════════════════
+(function () {
+  const canvas   = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
 
-    <!-- login card (centered full-page) -->
-    <div class="right-panel">
-      <!-- orbs behind the glass card -->
-      <div class="orb-inner">
-        <div class="orb ri-1"></div>
-        <div class="orb ri-2"></div>
-        <div class="orb ri-3"></div>
-      </div>
-      <div class="login-card">
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 60;
 
-        <div class="card-header">
-          <div class="card-eyebrow">Welcome back</div>
-          <div class="card-title">Sign in to<br/>MusiFy</div>
-          <div class="card-sub">Enter your credentials to continue</div>
-        </div>
+  const GOLD   = new THREE.Color(0xf59e0b);
+  const PINK   = new THREE.Color(0xec4899);
+  const PURPLE = new THREE.Color(0xa855f7);
+  const WHITE  = new THREE.Color(0xffffff);
+  const palette = [GOLD, PINK, PURPLE, WHITE, WHITE, GOLD];
 
-        <form class="login-form" id="loginForm" autocomplete="off">
-
-          <div class="form-group">
-            <label class="form-label" for="username">Username</label>
-            <div class="form-input-wrap">
-              <i class="fas fa-user form-input-icon"></i>
-              <input type="text" id="username" class="form-input"
-                placeholder="Enter your username"
-                autocomplete="off" spellcheck="false" />
-            </div>
-          </div>
-
-          <div class="form-divider"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="password">Password</label>
-            <div class="form-input-wrap">
-              <i class="fas fa-lock form-input-icon"></i>
-              <input type="password" id="password" class="form-input"
-                placeholder="Enter your password"
-                autocomplete="off"
-                data-form-type="other" />
-              <button type="button" class="toggle-password" id="togglePass">
-                <i class="fas fa-eye"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="error-msg" id="errorMsg">
-            <i class="fas fa-circle-exclamation"></i>
-            <span id="errorText">Invalid username or password</span>
-          </div>
-
-          <button type="submit" class="login-btn" id="loginBtn">
-            <span class="login-btn-text">
-              <i class="fas fa-arrow-right-to-bracket" style="margin-right:8px;"></i>Sign In
-            </span>
-            <div class="login-spinner"><i class="fas fa-circle-notch"></i></div>
-          </button>
-
-        </form>
-
-        <div class="hint-strip">
-          <i class="fas fa-shield-halved"></i>
-          Passwords secured with SHA-256 encryption
-        </div>
-
-      </div>
-    </div><!-- /right-panel -->
-
-  </div><!-- /page-wrap -->
-
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
-
-
-  <script>
-  // =============================================
-  //  THREE.JS INTERACTIVE LOGIN BACKGROUND
-  // =============================================
-
-  (function() {
-    const canvas = document.getElementById('loginCanvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x04040a, 1);
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.z = 3;
-
-    // ---- Starfield ----
-    const starCount = 2500;
-    const starPositions = new Float32Array(starCount * 3);
-    const starColors = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount; i++) {
-      starPositions[i * 3]     = (Math.random() - 0.5) * 20;
-      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 20;
-      // Color variation: purple to cyan
-      const t = Math.random();
-      starColors[i * 3]     = 0.3 + t * 0.5;  // R
-      starColors[i * 3 + 1] = 0.1 + t * 0.7;  // G
-      starColors[i * 3 + 2] = 0.5 + t * 0.5;  // B
-    }
-    const starGeo = new THREE.BufferGeometry();
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-    const starMat = new THREE.PointsMaterial({
-      size: 0.025,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.7,
-      sizeAttenuation: true
-    });
-    const stars = new THREE.Points(starGeo, starMat);
-    scene.add(stars);
-
-    // ---- Particle Sphere ----
-    const PARTICLE_COUNT = 1800;
-    const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
-    const basePositions = new Float32Array(PARTICLE_COUNT * 3);
-    const particleColors = new Float32Array(PARTICLE_COUNT * 3);
-    const randomOffsets = new Float32Array(PARTICLE_COUNT);
-    const RADIUS = 1.5;
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      // Golden ratio sphere distribution
-      const phi = Math.acos(1 - 2 * (i + 0.5) / PARTICLE_COUNT);
-      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-      const x = RADIUS * Math.sin(phi) * Math.cos(theta);
-      const y = RADIUS * Math.sin(phi) * Math.sin(theta);
-      const z = RADIUS * Math.cos(phi);
-
-      particlePositions[i * 3]     = x;
-      particlePositions[i * 3 + 1] = y;
-      particlePositions[i * 3 + 2] = z;
-      basePositions[i * 3]     = x;
-      basePositions[i * 3 + 1] = y;
-      basePositions[i * 3 + 2] = z;
-      randomOffsets[i] = Math.random() * Math.PI * 2;
-
-      // Purple to cyan gradient based on Y position
-      const t = (y + RADIUS) / (2 * RADIUS);
-      particleColors[i * 3]     = 0.35 + t * 0.2;   // R
-      particleColors[i * 3 + 1] = 0.1 + t * 0.72;   // G
-      particleColors[i * 3 + 2] = 0.6 + t * 0.35;   // B
-    }
-
-    const sphereGeo = new THREE.BufferGeometry();
-    sphereGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    sphereGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
-    const sphereMat = new THREE.PointsMaterial({
-      size: 0.018,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.9,
-      sizeAttenuation: true
-    });
-    const sphere = new THREE.Points(sphereGeo, sphereMat);
-    scene.add(sphere);
-
-    // ---- Inner glow sphere ----
-    const glowGeo = new THREE.SphereGeometry(1.45, 32, 32);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x8b5cf6,
-      transparent: true,
-      opacity: 0.03,
-      wireframe: false
-    });
-    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
-    scene.add(glowMesh);
-
-    // ---- Mouse tracking ----
-    const mouse = { x: 0, y: 0 };
-    const targetRotation = { x: 0, y: 0 };
-    const currentRotation = { x: 0, y: 0 };
-
-    document.addEventListener('mousemove', (e) => {
-      mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
-      mouse.y = -(e.clientY / window.innerHeight - 0.5) * 2;
-    });
-
-    // Touch support
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches.length > 0) {
-        mouse.x = (e.touches[0].clientX / window.innerWidth - 0.5) * 2;
-        mouse.y = -(e.touches[0].clientY / window.innerHeight - 0.5) * 2;
-      }
-    }, { passive: true });
-
-    // ---- Resize ----
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    // ---- Animation ----
-    const clock = new THREE.Clock();
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
-
-      // Smooth rotation toward mouse
-      targetRotation.x = mouse.y * 0.5;
-      targetRotation.y = mouse.x * 0.8;
-      currentRotation.x += (targetRotation.x - currentRotation.x) * 0.05;
-      currentRotation.y += (targetRotation.y - currentRotation.y) * 0.05;
-
-      sphere.rotation.x = currentRotation.x;
-      sphere.rotation.y = currentRotation.y + elapsed * 0.12;
-
-      glowMesh.rotation.y = elapsed * 0.1;
-      stars.rotation.y = elapsed * 0.01;
-      stars.rotation.x = elapsed * 0.005;
-
-      // Pulse particle sphere positions
-      const positions = sphereGeo.attributes.position.array;
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const offset = randomOffsets[i];
-        const wave = Math.sin(elapsed * 0.8 + offset) * 0.04;
-        const bx = basePositions[i * 3];
-        const by = basePositions[i * 3 + 1];
-        const bz = basePositions[i * 3 + 2];
-        const len = Math.sqrt(bx * bx + by * by + bz * bz);
-        positions[i * 3]     = bx + (bx / len) * wave;
-        positions[i * 3 + 1] = by + (by / len) * wave;
-        positions[i * 3 + 2] = bz + (bz / len) * wave;
-      }
-      sphereGeo.attributes.position.needsUpdate = true;
-
-      // ---- Auto color cycle — shift hue across all particles ----
-      const cols = sphereGeo.attributes.color.array;
-      // 5 palette hues that blend smoothly: violet, cyan, pink, green, blue
-      const HUES = [0.76, 0.54, 0.92, 0.38, 0.62];
-      const cycleDur = 6; // seconds per palette step
-      const palPos  = (elapsed / cycleDur) % HUES.length;
-      const palIdx  = Math.floor(palPos) % HUES.length;
-      const palNext = (palIdx + 1) % HUES.length;
-      const palBlend = palPos - Math.floor(palPos);
-      let dh = HUES[palNext] - HUES[palIdx];
-      if (dh >  0.5) dh -= 1;
-      if (dh < -0.5) dh += 1;
-      const baseHue = ((HUES[palIdx] + dh * palBlend) + 1) % 1;
-
-      const tmpColor = new THREE.Color();
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        // each particle gets a slight hue offset so the orb shimmers
-        const hue = (baseHue + i * 0.0003 + Math.sin(elapsed * 0.4 + i * 0.07) * 0.04 + 1) % 1;
-        const sat = 0.75 + Math.sin(elapsed * 0.6 + i * 0.05) * 0.10;
-        const lit = 0.55 + Math.sin(elapsed * 0.9 + i * 0.11) * 0.12;
-        tmpColor.setHSL(hue, sat, lit);
-        cols[i * 3]     = tmpColor.r;
-        cols[i * 3 + 1] = tmpColor.g;
-        cols[i * 3 + 2] = tmpColor.b;
-      }
-      sphereGeo.attributes.color.needsUpdate = true;
-
-      // Also shift glow to match
-      glowMat.color.setHSL(baseHue, 0.80, 0.60);
-
-      // Pulse glow
-      glowMat.opacity = 0.02 + Math.sin(elapsed * 1.5) * 0.015;
-
-      renderer.render(scene, camera);
-    }
-    animate();
-  })();
-
-  // =============================================
-  //  LOGIN LOGIC
-  // =============================================
-
-  // Passwords stored as SHA-256 hashes only — plaintext never in source
-  const USERS = {
-    surya:   { ph: '34a12809061e749271ae972328cd38bdd7fe3fc83bcfd5fc922e01dd1c3ba376', name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
-    ananthu: { ph: '77cce19facdc944ca9e5418413862881a33c731ed33f67ff254699f1b9570c77', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
-    devika:  { ph: 'c99bc6f668e8999a380975a9be485150f91070498f11f5bf0d56f67eb0f68930', name: 'Devika',  avatar: 'D', color: '#f472b6' },
-    sonu:    { ph: '65799f51379727f9a584975c238568cd1c570ef0873c10f3d5a546fcbe6073f3', name: 'Sonu',    avatar: 'S', color: '#34d399' },
-    bromin:  { ph: '080b9643325aeb8de8c556420ab27403c28a13ef5a8d40d8fec0bf9adada73a8', name: 'Bromin',  avatar: 'B', color: '#f97316' },
-    arjun:   { ph: '26a95b1e69c92f1cfb0381fd379d80526ecd9c368d3a7baa9be6c24b61a25e71', name: 'Arjun',   avatar: 'A', color: '#ef4444' },
-    deva:    { ph: '55ac2b3161e9c9e2ecb04869ae5e4d6b372f6f1733fede2a06738af09a761c59', name: 'Deva',    avatar: 'D', color: '#a855f7' },
-    amal:    { ph: '24bb9a41fcc4b3db6a3450ed9171b8c23ee9b494659f6ebfb697b30ea83d1fac', name: 'Amal',    avatar: 'A', color: '#10b981' },
-    sounder: { ph: 'c8d22056fcdcff4bc5dd5bee816553dc939adc6ac0d68d9fff05c9d8c9cf9338', name: 'Sounder', avatar: 'S', color: '#fb923c' },
-    zlatan:  { ph: 'a07c9be3cf72583e2829199730b483412c4280ce3fb210bc99237671447780d4', name: 'Zlatan',  avatar: 'Z', color: '#38bdf8' },
-    athu:    { ph: 'ae20f98677a4659ee2e6a1e7a85176cc17ae4574d0ba6c81072ea2e4a161b5cb', name: 'Athu',    avatar: 'A', color: '#4ade80' },
-    mahesh:  { ph: 'b7dafc766296428c56acaf95031aa8e644b667bc3a8358251613d9b2fbd16fa7', name: 'Mahesh',  avatar: 'M', color: '#f59e0b' },
-    abhilash:{ ph: 'bd39d425737af9e02ee8dbe2ebc9cf6385340c9f8b90fd0b41eac30f98ac433e', name: 'Abhilash', avatar: 'A', color: '#6366f1' }
-  };
-
-  // Remove loading screen from DOM after 4 s (CSS fades it at 3.5 s)
-  setTimeout(() => {
-    const ls = document.getElementById('loadScreen');
-    if (ls) ls.remove();
-  }, 4000);
-
-  async function sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  const COUNT = 2200;
+  const pos = new Float32Array(COUNT * 3);
+  const col = new Float32Array(COUNT * 3);
+  for (let i = 0; i < COUNT; i++) {
+    const i3 = i * 3;
+    pos[i3]   = (Math.random() - .5) * 200;
+    pos[i3+1] = (Math.random() - .5) * 200;
+    pos[i3+2] = (Math.random() - .5) * 120;
+    const c = palette[Math.floor(Math.random() * palette.length)];
+    col[i3] = c.r; col[i3+1] = c.g; col[i3+2] = c.b;
   }
-
-  const form = document.getElementById('loginForm');
-  const usernameInput = document.getElementById('username');
-  const passwordInput = document.getElementById('password');
-  const errorMsg = document.getElementById('errorMsg');
-  const errorText = document.getElementById('errorText');
-  const loginBtn = document.getElementById('loginBtn');
-  const togglePass = document.getElementById('togglePass');
-
-  // Toggle password visibility
-  togglePass.addEventListener('click', () => {
-    const isPass = passwordInput.type === 'password';
-    passwordInput.type = isPass ? 'text' : 'password';
-    togglePass.querySelector('i').className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  pGeo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+  const pMat = new THREE.PointsMaterial({
+    size: .6, vertexColors: true, transparent: true, opacity: .7,
+    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
   });
+  const particles = new THREE.Points(pGeo, pMat);
+  scene.add(particles);
 
-  function showError(msg) {
-    errorText.textContent = msg;
-    errorMsg.classList.add('visible');
-    usernameInput.classList.add('error');
-    passwordInput.classList.add('error');
-    loginBtn.style.animation = 'shake 0.4s ease';
-    setTimeout(() => loginBtn.style.animation = '', 400);
-  }
-
-  function hideError() {
-    errorMsg.classList.remove('visible');
-    usernameInput.classList.remove('error');
-    passwordInput.classList.remove('error');
-  }
-
-  usernameInput.addEventListener('input', hideError);
-  passwordInput.addEventListener('input', hideError);
-
-  // Shake animation
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes shake {
-      0%,100%{transform:translateX(0)}
-      20%{transform:translateX(-8px)}
-      40%{transform:translateX(8px)}
-      60%{transform:translateX(-5px)}
-      80%{transform:translateX(5px)}
-    }`;
-  document.head.appendChild(style);
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = usernameInput.value.trim().toLowerCase();
-    const password = passwordInput.value;
-
-    if (!username) { showError('Please enter your username'); return; }
-    if (!password) { showError('Please enter your password'); return; }
-
-    loginBtn.classList.add('loading');
-
-    const user = USERS[username];
-    if (!user) {
-      loginBtn.classList.remove('loading');
-      showError('User not found.');
-      return;
-    }
-
-    const inputHash = await sha256(password);
-    if (inputHash !== user.ph) {
-      loginBtn.classList.remove('loading');
-      showError('Incorrect password. Please try again.');
-      return;
-    }
-
-    // Success — store session & redirect
-    const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
-    if (!existing[username]) existing[username] = { favorites: [] };
-    localStorage.setItem('musify_users', JSON.stringify(existing));
-    sessionStorage.setItem('musify_session', JSON.stringify({
-      username,
-      name: user.name,
-      avatar: user.avatar,
-      color: user.color,
-      loginTime: Date.now()
+  function makeMesh(geo, color, opacity) {
+    return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+      color, wireframe: true, transparent: true, opacity,
+      blending: THREE.AdditiveBlending, depthWrite: false,
     }));
+  }
+  const shapes = [];
+  function addShape(geo, color, x, y, z, rx, ry) {
+    const m = makeMesh(geo, color, .1 + Math.random() * .14);
+    m.position.set(x, y, z);
+    m.userData = { rotX: rx, rotY: ry, floatAmp: 3 + Math.random() * 4, originY: y, phase: Math.random() * Math.PI * 2 };
+    scene.add(m); shapes.push(m);
+  }
+  for (let i = 0; i < 6; i++)
+    addShape(new THREE.IcosahedronGeometry(4 + Math.random() * 5, i % 2),
+      [0xf59e0b, 0xec4899, 0xa855f7][i % 3],
+      (Math.random()-.5)*100, (Math.random()-.5)*80, -10-Math.random()*40,
+      (Math.random()-.5)*.004, (Math.random()-.5)*.004);
+  for (let i = 0; i < 4; i++)
+    addShape(new THREE.TorusKnotGeometry(3+Math.random()*2, .3+Math.random()*.3, 80, 8),
+      [0xf59e0b, 0xec4899][i % 2],
+      (Math.random()-.5)*120, (Math.random()-.5)*80, -15-Math.random()*30,
+      (Math.random()-.5)*.006, (Math.random()-.5)*.006);
+  for (let i = 0; i < 8; i++)
+    addShape(new THREE.OctahedronGeometry(1.5+Math.random()*3),
+      [0xf59e0b, 0xec4899, 0xa855f7, 0xffffff][i % 4],
+      (Math.random()-.5)*140, (Math.random()-.5)*100, -5-Math.random()*50,
+      (Math.random()-.5)*.007, (Math.random()-.5)*.007);
 
-    // Animate out and redirect
-    document.querySelector('.right-panel').style.transition = 'all 0.5s ease';
-    document.querySelector('.right-panel').style.transform = 'translateX(40px)';
-    document.querySelector('.right-panel').style.opacity = '0';
-    document.querySelector('.left-panel') && (document.querySelector('.left-panel').style.transition = 'opacity 0.5s ease');
-    document.querySelector('.left-panel') && (document.querySelector('.left-panel').style.opacity = '0');
-
-    setTimeout(() => {
-      window.location.replace('player.html');
-    }, 600);
+  const lineMat = new THREE.LineBasicMaterial({
+    color: 0xf59e0b, transparent: true, opacity: .05,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   });
-  </script>
+  const SAMPLE = 400, THRESH = 22, lv = [];
+  for (let i = 0; i < SAMPLE; i++) {
+    const i3 = i * 3;
+    for (let j = i + 1; j < SAMPLE; j++) {
+      const j3 = j * 3;
+      const dx = pos[i3]-pos[j3], dy = pos[i3+1]-pos[j3+1], dz = pos[i3+2]-pos[j3+2];
+      if (dx*dx+dy*dy+dz*dz < THRESH*THRESH)
+        lv.push(pos[i3],pos[i3+1],pos[i3+2],pos[j3],pos[j3+1],pos[j3+2]);
+    }
+  }
+  if (lv.length) {
+    const lGeo = new THREE.BufferGeometry();
+    lGeo.setAttribute('position', new THREE.Float32BufferAttribute(lv, 3));
+    scene.add(new THREE.LineSegments(lGeo, lineMat));
+  }
+
+  let mx = 0, my = 0, smx = 0, smy = 0;
+  document.addEventListener('mousemove', e => {
+    mx = (e.clientX / window.innerWidth  - .5) * 2;
+    my = (e.clientY / window.innerHeight - .5) * 2;
+  });
+  let scrollY = 0;
+  window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  const clock = new THREE.Clock();
+  (function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    smx += (mx - smx) * .04; smy += (my - smy) * .04;
+    camera.position.x = smx * 8;
+    camera.position.y = -smy * 5 - scrollY * .012;
+    camera.lookAt(0, -scrollY * .012, 0);
+    particles.rotation.y = t * .025;
+    particles.rotation.x = t * .008;
+    shapes.forEach(s => {
+      s.rotation.x += s.userData.rotX;
+      s.rotation.y += s.userData.rotY;
+      s.position.y  = s.userData.originY + Math.sin(t * .8 + s.userData.phase) * s.userData.floatAmp;
+    });
+    renderer.render(scene, camera);
+  })();
+})();
+
+// ═══════════════════════════════════════════════════════
+//  CUSTOM CURSOR
+// ═══════════════════════════════════════════════════════
+const cursor = document.getElementById('cursor');
+const cursorDot = document.getElementById('cursor-dot');
+let cx = 0, cy = 0, tcx = 0, tcy = 0;
+document.addEventListener('mousemove', e => { tcx = e.clientX; tcy = e.clientY; });
+(function moveCursor() {
+  cx += (tcx - cx) * .15; cy += (tcy - cy) * .15;
+  cursor.style.left = cx + 'px'; cursor.style.top = cy + 'px';
+  cursorDot.style.left = tcx + 'px'; cursorDot.style.top = tcy + 'px';
+  requestAnimationFrame(moveCursor);
+})();
+
+// ═══════════════════════════════════════════════════════
+//  SCROLL REVEAL
+// ═══════════════════════════════════════════════════════
+const revealIO = new IntersectionObserver(
+  entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+  { threshold: 0.1 }
+);
+document.querySelectorAll('.reveal').forEach(el => revealIO.observe(el));
+
+// ═══════════════════════════════════════════════════════
+//  TMDB API CONFIG
+// ═══════════════════════════════════════════════════════
+const TMDB_BASE    = 'https://api.themoviedb.org/3';
+const IMG_W500     = 'https://image.tmdb.org/t/p/w500';
+const IMG_W1280    = 'https://image.tmdb.org/t/p/w1280';
+const TMDB_BEARER  = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5M2NjZWRjMTIwZmQ2OGM5N2EyN2ZiMWJjZWZjYzQxYiIsIm5iZiI6MTc3Njg0ODAwOC44NCwic3ViIjoiNjllODhjODg4MGMwZjNiYzZkMjNmM2RhIiwic2NvcGVzIjpbImFwaV9yZWFkIl0sInZlcnNpb24iOjF9.-73p4fPaqVZvDUXt_srVhu99L_LXPuE5xd7tmjhyJ2M';
+const PLACEHOLDER  = null; // key is hardcoded, banner never shown
+
+// Hide setup banner — key is already configured
+document.getElementById('setup-banner').classList.add('hidden');
+document.getElementById('main-nav').classList.remove('with-banner');
+
+async function tmdbFetch(endpoint) {
+  const res = await fetch(`${TMDB_BASE}${endpoint}`, {
+    headers: { 'Authorization': `Bearer ${TMDB_BEARER}`, 'accept': 'application/json' }
+  });
+  if (!res.ok) throw new Error('TMDB ' + res.status);
+  return res.json();
+}
+
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Helper: escape HTML ──
+function esc(str) {
+  return String(str || '').replace(/[&<>"']/g,
+    c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// ── Skeleton helpers ──
+function skeletonCard() {
+  return `<div class="skeleton-card">
+    <div class="skeleton skeleton-img" style="aspect-ratio:2/3;"></div>
+    <div class="skeleton-body">
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </div>
+  </div>`;
+}
+function renderSkeletons(id, n) {
+  document.getElementById(id).innerHTML = Array.from({length:n}).map(skeletonCard).join('');
+}
+
+// ── Build movie card ──
+function buildCard(movie, rank, badgeType) {
+  const title  = esc(movie.title || movie.name || 'Unknown');
+  const img    = movie.poster_path ? IMG_W500 + movie.poster_path : '';
+  const score  = movie.vote_average ? '⭐ ' + movie.vote_average.toFixed(1) : '—';
+  const year   = movie.release_date ? movie.release_date.slice(0, 4) : '';
+  const lang   = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali', mr:'Marathi' }[movie.original_language] || movie.original_language?.toUpperCase() || '';
+  const id     = movie.id;
+
+  const badgeLabels = { new:'NEW', top:'TOP', hd:'HD', now:'IN CINEMAS', lang: lang };
+  const thumb = img
+    ? `<img src="${img}" alt="${title}" loading="lazy" onerror="imgError(this)" />`
+    : `<div class="card-thumb-fallback">
+         <div class="cf-icon">🎬</div>
+         <div class="cf-title">${title}</div>
+         <div class="cf-lang">${[lang, year].filter(Boolean).join(' · ')}</div>
+       </div>`;
+
+  return `
+  <div class="movie-card" onclick="openPlayer(${id})">
+    <div class="card-thumb">
+      ${thumb}
+      ${rank ? `<div class="card-rank">#${rank}</div>` : ''}
+      <span class="badge ${badgeType}">${badgeLabels[badgeType] || badgeType}</span>
+      <div class="play-overlay"><div class="play-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>
+      </div></div>
+    </div>
+    <div class="card-info">
+      <h3>${title}</h3>
+      <div class="card-meta">
+        <span class="score">${score}</span>
+        <span>${year}</span>
+        ${lang ? `<span>${lang}</span>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function imgError(el) {
+  const thumb = el.closest('.card-thumb');
+  if (thumb) thumb.innerHTML = '<div class="card-thumb-fallback"><div class="cf-icon">🎬</div></div>';
+}
+
+// ── Hardcoded demo data — loads instantly without any API key ──
+const DEMO_MOVIES = [
+  // ── Hindi / Bollywood ──
+  { id: 20453,   title: '3 Idiots',                    release_date: '2009-12-25', vote_average: 8.4, original_language: 'hi', poster_path: '/66A9MqXOyVFCssoloscN29KyN05.jpg' },
+  { id: 226397,  title: 'PK',                          release_date: '2014-12-19', vote_average: 8.1, original_language: 'hi', poster_path: '/pIPRZW8MBMdOXnBXjJBs1tFqN9t.jpg' },
+  { id: 384262,  title: 'Dangal',                      release_date: '2016-12-23', vote_average: 8.3, original_language: 'hi', poster_path: '/3J8KFMJ5Ggkq7btaMqB1nnpMNl9.jpg' },
+  { id: 263115,  title: 'Bajrangi Bhaijaan',           release_date: '2015-07-17', vote_average: 7.9, original_language: 'hi', poster_path: null },
+  { id: 591284,  title: 'Andhadhun',                   release_date: '2018-10-05', vote_average: 8.2, original_language: 'hi', poster_path: null },
+  { id: 891699,  title: 'Pathaan',                     release_date: '2023-01-25', vote_average: 5.4, original_language: 'hi', poster_path: null },
+  { id: 1211054, title: 'Jawan',                       release_date: '2023-09-07', vote_average: 6.3, original_language: 'hi', poster_path: null },
+  { id: 1138194, title: 'Animal',                      release_date: '2023-12-01', vote_average: 6.7, original_language: 'hi', poster_path: null },
+  { id: 629510,  title: 'Kabir Singh',                 release_date: '2019-06-21', vote_average: 7.1, original_language: 'hi', poster_path: null },
+  { id: 598892,  title: 'Gully Boy',                   release_date: '2019-02-14', vote_average: 7.8, original_language: 'hi', poster_path: null },
+  { id: 582014,  title: 'Uri: The Surgical Strike',    release_date: '2019-01-11', vote_average: 8.3, original_language: 'hi', poster_path: null },
+  { id: 435521,  title: 'Padmaavat',                   release_date: '2018-01-25', vote_average: 6.5, original_language: 'hi', poster_path: null },
+  { id: 539885,  title: 'War',                         release_date: '2019-10-02', vote_average: 5.8, original_language: 'hi', poster_path: null },
+  { id: 258897,  title: 'Drishyam',                    release_date: '2015-07-31', vote_average: 8.2, original_language: 'hi', poster_path: null },
+  { id: 19404,   title: 'Dilwale Dulhania Le Jayenge', release_date: '1995-10-20', vote_average: 8.1, original_language: 'hi', poster_path: null },
+  { id: 14823,   title: 'Lagaan',                      release_date: '2001-06-15', vote_average: 8.1, original_language: 'hi', poster_path: null },
+  { id: 22803,   title: 'Taare Zameen Par',            release_date: '2007-12-21', vote_average: 8.4, original_language: 'hi', poster_path: null },
+  { id: 71672,   title: 'Zindagi Na Milegi Dobara',    release_date: '2011-07-15', vote_average: 8.1, original_language: 'hi', poster_path: null },
+  { id: 94696,   title: 'Gangs of Wasseypur',          release_date: '2012-05-18', vote_average: 8.2, original_language: 'hi', poster_path: null },
+  { id: 630626,  title: 'Chhichhore',                  release_date: '2019-09-06', vote_average: 8.3, original_language: 'hi', poster_path: null },
+  { id: 498167,  title: 'Raazi',                       release_date: '2018-05-11', vote_average: 7.8, original_language: 'hi', poster_path: null },
+  { id: 540559,  title: 'Stree',                       release_date: '2018-08-31', vote_average: 7.8, original_language: 'hi', poster_path: null },
+  // ── Telugu ──
+  { id: 397243,  title: 'Baahubali 2: The Conclusion', release_date: '2017-04-28', vote_average: 8.1, original_language: 'te', poster_path: null },
+  { id: 277834,  title: 'Baahubali: The Beginning',    release_date: '2015-07-10', vote_average: 7.9, original_language: 'te', poster_path: null },
+  { id: 786892,  title: 'RRR',                         release_date: '2022-03-24', vote_average: 7.8, original_language: 'te', poster_path: '/nEufeZlyAOLqO2brrs0yeF1lgXO.jpg' },
+  { id: 892669,  title: 'Pushpa: The Rise',            release_date: '2021-12-17', vote_average: 7.2, original_language: 'te', poster_path: null },
+  { id: 690828,  title: 'Ala Vaikunthapurramuloo',     release_date: '2020-01-12', vote_average: 7.7, original_language: 'te', poster_path: null },
+  { id: 449751,  title: 'Arjun Reddy',                 release_date: '2017-08-25', vote_average: 8.0, original_language: 'te', poster_path: null },
+  // ── Tamil ──
+  { id: 550294,  title: 'Vikram Vedha',                release_date: '2017-07-21', vote_average: 8.4, original_language: 'ta', poster_path: null },
+  { id: 598243,  title: 'Master',                      release_date: '2021-01-13', vote_average: 7.5, original_language: 'ta', poster_path: null },
+  { id: 340275,  title: 'Mersal',                      release_date: '2017-10-18', vote_average: 7.3, original_language: 'ta', poster_path: null },
+  { id: 354297,  title: 'Kabali',                      release_date: '2016-07-22', vote_average: 6.3, original_language: 'ta', poster_path: null },
+  { id: 819189,  title: 'Vikram',                      release_date: '2022-06-03', vote_average: 7.9, original_language: 'ta', poster_path: null },
+  { id: 496243,  title: '2.0',                         release_date: '2018-11-29', vote_average: 6.4, original_language: 'ta', poster_path: null },
+  { id: 625581,  title: 'Bigil',                       release_date: '2019-10-25', vote_average: 7.3, original_language: 'ta', poster_path: null },
+  { id: 570126,  title: 'Vada Chennai',                release_date: '2018-10-17', vote_average: 8.4, original_language: 'ta', poster_path: null },
+  // ── Kannada ──
+  { id: 613550,  title: 'KGF: Chapter 2',              release_date: '2022-04-14', vote_average: 7.9, original_language: 'kn', poster_path: '/4OTYefcAlaShn6TGVK33UxLW9R7.jpg' },
+  { id: 543217,  title: 'KGF: Chapter 1',              release_date: '2018-12-21', vote_average: 7.9, original_language: 'kn', poster_path: null },
+  { id: 475912,  title: 'Ulidavaru Kandanthe',         release_date: '2014-07-11', vote_average: 8.2, original_language: 'kn', poster_path: null },
+  // ── Malayalam ──
+  { id: 516566,  title: 'Lucifer',                     release_date: '2019-03-28', vote_average: 7.5, original_language: 'ml', poster_path: null },
+  { id: 241658,  title: 'Drishyam',                    release_date: '2013-08-30', vote_average: 8.3, original_language: 'ml', poster_path: null },
+  { id: 641956,  title: 'Kumbalangi Nights',           release_date: '2019-02-07', vote_average: 8.3, original_language: 'ml', poster_path: null },
+  { id: 677716,  title: 'Jallikattu',                  release_date: '2019-10-04', vote_average: 7.5, original_language: 'ml', poster_path: null },
+  // ── Bengali ──
+  { id: 93028,   title: 'Kahaani',                     release_date: '2012-03-09', vote_average: 7.9, original_language: 'bn', poster_path: null },
+  { id: 222935,  title: 'Piku',                        release_date: '2015-05-08', vote_average: 7.8, original_language: 'bn', poster_path: null },
+];
+
+// ═══════════════════════════════════════════════════════
+//  DATA LOADERS
+// ═══════════════════════════════════════════════════════
+
+async function loadFeatured() {
+  try {
+    const d = await tmdbFetch('/trending/movie/week?region=IN&language=en-US');
+    // Pick first result that is an Indian language film
+    const movie = d.results.find(m =>
+      ['hi','ta','te','ml','kn','pa','bn','mr'].includes(m.original_language)
+    ) || d.results[0];
+    if (!movie) return;
+
+    const backdrop = movie.backdrop_path ? IMG_W1280 + movie.backdrop_path : '';
+    const poster   = movie.poster_path   ? IMG_W500  + movie.poster_path   : '';
+    const title    = esc(movie.title || '');
+    const overview = esc(movie.overview || 'No description available.');
+    const score    = movie.vote_average?.toFixed(1) || '—';
+    const year     = movie.release_date?.slice(0,4) || '';
+    const lang     = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali' }[movie.original_language] || movie.original_language?.toUpperCase() || '';
+
+    document.getElementById('featured-banner').innerHTML = `
+      <div class="featured-art">
+        ${backdrop
+          ? `<img src="${backdrop}" alt="${title}" />`
+          : poster
+            ? `<img src="${poster}" alt="${title}" style="object-position:top;" />`
+            : '<div class="featured-art-fallback">🎬</div>'}
+      </div>
+      <div class="featured-content">
+        <span class="featured-tag">✦ Trending in India</span>
+        <h2>${title}</h2>
+        <p class="featured-desc">${overview}</p>
+        <div class="featured-stats">
+          <div class="stat"><span class="stat-val">${score}</span><span class="stat-lbl">Rating</span></div>
+          <div class="stat"><span class="stat-val">${year}</span><span class="stat-lbl">Year</span></div>
+          <div class="stat"><span class="stat-val">${lang || '—'}</span><span class="stat-lbl">Language</span></div>
+        </div>
+        <div class="featured-actions">
+          <button class="btn-primary" onclick="openPlayer(${movie.id})">▶ Watch Now</button>
+          <a class="btn-outline" href="#trending">Browse More</a>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('featured-banner').innerHTML =
+      '<div class="error-state" style="grid-column:1/-1"><p>Could not load featured movie. Add your TMDB API key above.</p></div>';
+  }
+}
+
+async function loadTrending() {
+  renderSkeletons('trending-grid', 6);
+  try {
+    const d = await tmdbFetch('/trending/movie/week?region=IN&language=en-US');
+    const indian = d.results.filter(m =>
+      ['hi','ta','te','ml','kn','pa','bn','mr'].includes(m.original_language)
+    ).slice(0, 6);
+    const list = indian.length >= 4 ? indian : d.results.slice(0, 6);
+    document.getElementById('trending-grid').innerHTML =
+      list.map((m, i) => buildCard(m, i + 1, i < 3 ? 'top' : 'new')).join('');
+  } catch {
+    document.getElementById('trending-grid').innerHTML =
+      '<div class="error-state"><p>Could not load trending movies.</p></div>';
+  }
+}
+
+async function loadNowPlaying() {
+  renderSkeletons('nowplaying-grid', 6);
+  try {
+    await delay(300);
+    const d = await tmdbFetch('/movie/now_playing?region=IN&language=en-US');
+    document.getElementById('nowplaying-grid').innerHTML =
+      d.results.slice(0, 6).map(m => buildCard(m, null, 'now')).join('');
+  } catch {
+    document.getElementById('nowplaying-grid').innerHTML =
+      '<div class="error-state"><p>Could not load now playing.</p></div>';
+  }
+}
+
+async function loadBollywood() {
+  renderSkeletons('bollywood-grid', 6);
+  try {
+    await delay(600);
+    const d = await tmdbFetch('/discover/movie?with_original_language=hi&sort_by=popularity.desc&region=IN');
+    document.getElementById('bollywood-grid').innerHTML =
+      d.results.slice(0, 6).map(m => buildCard(m, null, 'lang')).join('');
+  } catch {
+    document.getElementById('bollywood-grid').innerHTML =
+      '<div class="error-state"><p>Could not load Bollywood films.</p></div>';
+  }
+}
+
+let allRegional = { ta: null, te: null, ml: null, kn: null, pa: null, bn: null };
+let activeRegionalLang = 'ta';
+
+async function loadRegional(lang) {
+  if (allRegional[lang]) { renderRegionalGrid(lang); return; }
+  if (!TMDB_BEARER) {
+    const filtered = DEMO_MOVIES.filter(m => m.original_language === lang);
+    allRegional[lang] = filtered.length ? filtered : DEMO_MOVIES.slice(0, 6);
+    renderRegionalGrid(lang);
+    return;
+  }
+  renderSkeletons('regional-grid', 6);
+  try {
+    await delay(900);
+    const d = await tmdbFetch(`/discover/movie?with_original_language=${lang}&sort_by=popularity.desc`);
+    allRegional[lang] = d.results;
+    renderRegionalGrid(lang);
+  } catch {
+    document.getElementById('regional-grid').innerHTML =
+      '<div class="error-state"><p>Could not load regional movies.</p></div>';
+  }
+}
+function renderRegionalGrid(lang) {
+  const list = allRegional[lang] || [];
+  document.getElementById('regional-grid').innerHTML =
+    list.slice(0, 8).map(m => buildCard(m, null, 'lang')).join('') ||
+    '<div class="error-state"><p>No results.</p></div>';
+}
+
+async function loadTopRated() {
+  renderSkeletons('toprated-grid', 6);
+  try {
+    await delay(1200);
+    const d = await tmdbFetch('/discover/movie?with_original_language=hi%7Cta%7Cte%7Cml&sort_by=vote_average.desc&vote_count.gte=1000');
+    document.getElementById('toprated-grid').innerHTML =
+      d.results.slice(0, 6).map((m, i) => buildCard(m, i + 1, 'hd')).join('');
+  } catch {
+    document.getElementById('toprated-grid').innerHTML =
+      '<div class="error-state"><p>Could not load top rated.</p></div>';
+  }
+}
+
+async function loadMarquee() {
+  const FALLBACK = ['Baahubali','RRR','KGF','Pathaan','Animal','Pushpa','Kalki 2898 AD',
+    'Jawan','Adipurush','Dunki','Fighter','Stree 2','Devara','Singham Returns'];
+  try {
+    await delay(1500);
+    const d = await tmdbFetch('/trending/movie/week?region=IN');
+    const items = d.results.slice(0, 20).map(m =>
+      `<span class="marquee-item"><span class="dot"></span>${esc(m.title)}</span>`).join('');
+    document.getElementById('marquee-track').innerHTML = items + items;
+  } catch {
+    const items = FALLBACK.map(t => `<span class="marquee-item"><span class="dot"></span>${t}</span>`).join('');
+    document.getElementById('marquee-track').innerHTML = items + items;
+  }
+}
+
+// ── Search ──
+async function searchMovies(query) {
+  const section = document.getElementById('search-section');
+  const grid    = document.getElementById('search-results');
+  section.style.display = 'block';
+  document.getElementById('search-query-label').textContent = `Results for "${query}"`;
+  grid.innerHTML = Array.from({length:6}).map(skeletonCard).join('');
+  section.scrollIntoView({ behavior: 'smooth' });
+  try {
+    const d = await tmdbFetch(`/search/movie?query=${encodeURIComponent(query)}&region=IN`);
+    grid.innerHTML = d.results?.length
+      ? d.results.slice(0, 12).map(m => buildCard(m, null, 'hd')).join('')
+      : '<div class="error-state"><p>No results found.</p></div>';
+  } catch {
+    grid.innerHTML = '<div class="error-state"><p>Search failed. Check your API key.</p></div>';
+  }
+}
+
+// ── Genre search ──
+async function searchByGenre(genreId) {
+  const section = document.getElementById('search-section');
+  const grid    = document.getElementById('search-results');
+  section.style.display = 'block';
+  const names = { 28:'Action', 10749:'Romance', 18:'Drama', 35:'Comedy', 53:'Thriller', 27:'Horror', 878:'Sci-Fi', 80:'Crime' };
+  document.getElementById('search-query-label').textContent = `Genre: ${names[genreId] || genreId}`;
+  grid.innerHTML = Array.from({length:6}).map(skeletonCard).join('');
+  section.scrollIntoView({ behavior: 'smooth' });
+  try {
+    const d = await tmdbFetch(`/discover/movie?with_genres=${genreId}&with_original_language=hi%7Cta%7Cte%7Cml&sort_by=popularity.desc`);
+    grid.innerHTML = d.results?.length
+      ? d.results.slice(0, 12).map(m => buildCard(m, null, 'hd')).join('')
+      : '<div class="error-state"><p>No results found.</p></div>';
+  } catch {
+    grid.innerHTML = '<div class="error-state"><p>Failed to load genre results.</p></div>';
+  }
+}
+
+// ── Search input ──
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = e.target.value.trim();
+    if (q.length >= 2) searchMovies(q);
+  }
+});
+
+// ── Genre card clicks ──
+document.querySelectorAll('.cat-card').forEach(card => {
+  card.addEventListener('click', () => searchByGenre(card.dataset.genre));
+});
+
+// ── Regional tabs ──
+document.getElementById('regional-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('#regional-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeRegionalLang = btn.dataset.lang;
+  loadRegional(activeRegionalLang);
+});
+
+// ═══════════════════════════════════════════════════════
+//  VIDEO PLAYER MODAL
+//  Movie embed providers (TMDB ID → iframe embed)
+// ═══════════════════════════════════════════════════════
+const STREAM_SOURCES = [
+  { name: 'VidSrc',      url: id => `https://vidsrc.me/embed/movie?tmdb=${id}` },
+  { name: 'VidSrc.cc',   url: id => `https://vidsrc.cc/embed/movie?tmdb=${id}` },
+  { name: 'EmbedSU',     url: id => `https://embed.su/embed/movie/${id}` },
+  { name: '2Embed',      url: id => `https://www.2embed.cc/embed/${id}` },
+  { name: 'MoviesAPI',   url: id => `https://moviesapi.club/movie/${id}` },
+  { name: 'NontonFilm',  url: id => `https://www.NontonFilm21.me/embed/${id}` },
+];
+const TV_STREAM_SOURCES = [
+  { name: 'VidSrc',      url: (id,s,e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}` },
+  { name: 'VidSrc.cc',   url: (id,s,e) => `https://vidsrc.cc/embed/tv?tmdb=${id}&season=${s}&episode=${e}` },
+  { name: 'EmbedSU',     url: (id,s,e) => `https://embed.su/embed/tv/${id}/${s}/${e}` },
+  { name: '2Embed',      url: (id,s,e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}` },
+  { name: 'MoviesAPI',   url: (id,s,e) => `https://moviesapi.club/tv/${id}-${s}-${e}` },
+  { name: 'NontonFilm',  url: (id,s,e) => `https://www.NontonFilm21.me/embed/${id}/${s}/${e}` },
+];
+
+const playerModal = document.getElementById('player-modal');
+let currentMovieId    = null;
+let currentSourceIdx  = 0;
+let currentYtKey      = null;
+let currentIsTV       = false;
+let currentSeason     = 1;
+let currentEpisode    = 1;
+
+// Tab switcher
+document.getElementById('player-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.ptab');
+  if (btn) showTab(btn.dataset.tab);
+});
+function showTab(tab) {
+  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('pane-stream').style.display  = tab === 'stream'  ? 'block' : 'none';
+  document.getElementById('pane-trailer').style.display = tab === 'trailer' ? 'block' : 'none';
+}
+
+// Source strip click — delegated
+document.getElementById('src-strip').addEventListener('click', e => {
+  const btn = e.target.closest('.src-btn');
+  if (!btn) return;
+  currentSourceIdx = parseInt(btn.dataset.src, 10);
+  document.querySelectorAll('.src-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.src === btn.dataset.src));
+  renderStreamEmbed();
+  showTab('stream');
+});
+
+document.getElementById('season-select').addEventListener('change', e => {
+  loadSeason(currentMovieId, parseInt(e.target.value, 10));
+});
+
+function renderStreamEmbed() {
+  const sources = currentIsTV ? TV_STREAM_SOURCES : STREAM_SOURCES;
+  const src = sources[currentSourceIdx];
+  const url = currentIsTV ? src.url(currentMovieId, currentSeason, currentEpisode) : src.url(currentMovieId);
+  const ep  = currentIsTV ? `S${String(currentSeason).padStart(2,'0')}E${String(currentEpisode).padStart(2,'0')} — ` : '';
+  document.getElementById('pane-stream').innerHTML = `
+    <iframe
+      src="${url}"
+      title="${ep}${src.name}"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+      allowfullscreen
+      webkit-playsinline
+      playsinline
+      x-webkit-airplay="allow"
+      style="position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;"
+    ></iframe>
+    <button id="fs-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>`;
+}
+
+function toggleFullscreen() {
+  const pane = document.getElementById('pane-stream');
+  const iframe = pane.querySelector('iframe');
+  const el = iframe || pane;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen)?.call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen)?.call(document);
+  }
+}
+document.addEventListener('fullscreenchange',       () => { const b = document.getElementById('fs-btn'); if (b) b.textContent = document.fullscreenElement ? '✕' : '⛶'; });
+document.addEventListener('webkitfullscreenchange', () => { const b = document.getElementById('fs-btn'); if (b) b.textContent = document.webkitFullscreenElement ? '✕' : '⛶'; });
+
+function buildSrcStrip() {
+  const sources = currentIsTV ? TV_STREAM_SOURCES : STREAM_SOURCES;
+  const strip = document.getElementById('src-strip');
+  strip.innerHTML = `<span class="src-strip-label">SOURCE:</span>` +
+    sources.map((s, i) =>
+      `<button class="src-btn${i === 0 ? ' active' : ''}" data-src="${i}">${s.name}</button>`
+    ).join('');
+}
+
+async function openPlayer(tmdbId) {
+  currentIsTV      = false;
+  currentMovieId   = tmdbId;
+  currentSourceIdx = 0;
+  currentYtKey     = null;
+
+  playerModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('tv-controls').style.display = 'none';
+  showTab('stream');
+  buildSrcStrip();
+
+  // Inject stream embed immediately — don't wait for metadata
+  renderStreamEmbed();
+
+  // Reset other panes
+  document.getElementById('pane-trailer').innerHTML =
+    '<div class="modal-video-loading"><div class="modal-spinner"></div></div>';
+  document.getElementById('modal-info').innerHTML = `
+    <div class="skeleton" style="width:100%;aspect-ratio:2/3;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="skeleton modal-skeleton-line" style="width:90%"></div>
+    <div class="skeleton modal-skeleton-line" style="width:65%"></div>
+    <div class="skeleton modal-skeleton-line" style="width:80%"></div>`;
+
+  // Fetch metadata + videos in parallel
+  try {
+    const [meta, vids] = await Promise.all([
+      tmdbFetch(`/movie/${tmdbId}?language=en-US`),
+      tmdbFetch(`/movie/${tmdbId}/videos?language=en-US`).catch(() => ({ results: [] })),
+    ]);
+
+    // Trailer
+    const trailer = (vids.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube')
+                 || (vids.results || []).find(v => v.site === 'YouTube');
+    currentYtKey = trailer?.key || null;
+
+    // Trailer pane — thumbnail facade, click loads iframe inside modal
+    document.getElementById('pane-trailer').innerHTML = currentYtKey
+      ? `<div class="modal-yt-thumb" onclick="playTrailerInModal('${currentYtKey}', this)">
+           <img src="https://img.youtube.com/vi/${currentYtKey}/maxresdefault.jpg"
+                onerror="this.src='https://img.youtube.com/vi/${currentYtKey}/hqdefault.jpg'"
+                alt="Trailer thumbnail" />
+           <div class="modal-yt-play">
+             <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+           </div>
+           <div class="modal-yt-label">CLICK TO PLAY TRAILER</div>
+         </div>`
+      : `<div class="modal-no-video">
+           <div class="big-emoji">🎬</div>
+           <div class="no-title">NO TRAILER FOUND</div>
+         </div>`;
+
+    // Info sidebar
+    const title    = esc(meta.title || '');
+    const poster   = meta.poster_path ? IMG_W500 + meta.poster_path : '';
+    const score    = meta.vote_average?.toFixed(1) || '—';
+    const runtime  = meta.runtime ? `${meta.runtime} min` : '—';
+    const year     = meta.release_date?.slice(0, 4) || '';
+    const lang     = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali' }[meta.original_language] || meta.original_language?.toUpperCase() || '';
+    const status   = esc(meta.status || '');
+    const overview = esc(meta.overview || 'No description available.');
+    const genres   = (meta.genres || []).slice(0, 4)
+      .map(g => `<span class="genre-tag">${esc(g.name)}</span>`).join('');
+
+    document.getElementById('modal-info').innerHTML = `
+      ${poster
+        ? `<img class="modal-poster" src="${poster}" alt="${title}" loading="lazy" />`
+        : `<div class="modal-poster-placeholder">🎬</div>`}
+      <div class="modal-title">${title}</div>
+      <div class="modal-genres">${genres}</div>
+      <div class="modal-score">${score}
+        <span style="font-size:.75rem;font-family:'Rajdhani',sans-serif;color:#64748b;font-weight:400;"> / 10</span>
+      </div>
+      <div class="modal-meta-row">
+        <span class="modal-meta-item">🗓 ${year}</span>
+        <span class="modal-meta-item">⏱ ${runtime}</span>
+        <span class="modal-meta-item">🗣 ${lang}</span>
+        <span class="modal-meta-item">📡 ${status}</span>
+      </div>
+      <p class="modal-synopsis">${overview}</p>
+      ${currentYtKey ? `<a class="modal-yt-link" href="https://www.youtube.com/watch?v=${currentYtKey}" target="_blank" rel="noopener noreferrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.1 2.8 12 2.8 12 2.8s-4.1 0-6.8.1c-.6.1-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.1.7 11.2v2c0 2.1.3 4.2.3 4.2s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.2 21.6 12 21.6 12 21.6s4.1 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.1.3-4.2v-2C23.3 9.1 23 7 23 7zM9.7 15.5V8.4l8.1 3.6-8.1 3.5z"/></svg>
+        WATCH TRAILER
+      </a>` : ''}`;
+
+  } catch {
+    document.getElementById('modal-info').innerHTML =
+      '<div class="error-state"><p>Could not load movie info.</p></div>';
+    document.getElementById('pane-trailer').innerHTML =
+      '<div class="modal-no-video"><div class="big-emoji">⚠️</div><div class="no-title">FAILED TO LOAD</div></div>';
+  }
+}
+
+function playTrailerInModal(ytKey, el) {
+  const pane = el.closest('.modal-video-wrap');
+  pane.innerHTML = `<iframe
+    src="https://www.youtube-nocookie.com/embed/${ytKey}?autoplay=1&rel=0&modestbranding=1"
+    title="Trailer"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen"
+    allowfullscreen
+    style="position:absolute;inset:0;width:100%;height:100%;border:none;"></iframe>`;
+}
+
+function closePlayer() {
+  playerModal.classList.remove('open');
+  document.body.style.overflow = '';
+  currentIsTV = false;
+  document.getElementById('tv-controls').style.display = 'none';
+  setTimeout(() => {
+    document.getElementById('pane-stream').innerHTML =
+      '<div class="modal-video-loading"><div class="modal-spinner"></div></div>';
+    document.getElementById('pane-trailer').innerHTML = '';
+  }, 360);
+}
+
+playerModal.addEventListener('click', e => { if (e.target === playerModal) closePlayer(); });
+playerModal.addEventListener('touchend', e => { if (e.target === playerModal) closePlayer(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && playerModal.classList.contains('open')) closePlayer();
+});
+window.addEventListener('beforeunload', e => {
+  if (playerModal.classList.contains('open')) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ── Demo loader (no API key needed) ──
+function loadDemoData() {
+  const LANG_MAP = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali' };
+  const hindi  = DEMO_MOVIES.filter(m => m.original_language === 'hi');
+  const sorted = [...DEMO_MOVIES].sort((a, b) => b.vote_average - a.vote_average);
+
+  // Featured banner
+  const feat = DEMO_MOVIES[2]; // Dangal
+  document.getElementById('featured-banner').innerHTML = `
+    <div class="featured-art">
+      <div class="featured-art-fallback">🎬</div>
+    </div>
+    <div class="featured-content">
+      <span class="featured-tag">✦ Trending in India</span>
+      <h2>${esc(feat.title)}</h2>
+      <p class="featured-desc">A biographical sports drama about wrestler Mahavir Singh Phogat who trains his daughters to become world-class wrestlers. Starring Aamir Khan.</p>
+      <div class="featured-stats">
+        <div class="stat"><span class="stat-val">${feat.vote_average}</span><span class="stat-lbl">Rating</span></div>
+        <div class="stat"><span class="stat-val">${feat.release_date.slice(0,4)}</span><span class="stat-lbl">Year</span></div>
+        <div class="stat"><span class="stat-val">${LANG_MAP[feat.original_language]||'—'}</span><span class="stat-lbl">Language</span></div>
+      </div>
+      <div class="featured-actions">
+        <button class="btn-primary" onclick="openPlayer(${feat.id})">▶ Watch Now</button>
+        <a class="btn-outline" href="#trending">Browse More</a>
+      </div>
+    </div>`;
+
+  document.getElementById('trending-grid').innerHTML =
+    DEMO_MOVIES.slice(0, 6).map((m, i) => buildCard(m, i + 1, i < 3 ? 'top' : 'new')).join('');
+  document.getElementById('nowplaying-grid').innerHTML =
+    DEMO_MOVIES.slice(6, 12).map(m => buildCard(m, null, 'now')).join('');
+  document.getElementById('bollywood-grid').innerHTML =
+    hindi.slice(0, 6).map(m => buildCard(m, null, 'lang')).join('');
+  document.getElementById('regional-grid').innerHTML =
+    DEMO_MOVIES.filter(m => m.original_language === 'ta').map(m => buildCard(m, null, 'lang')).join('');
+  document.getElementById('toprated-grid').innerHTML =
+    sorted.slice(0, 6).map((m, i) => buildCard(m, i + 1, 'hd')).join('');
+  document.getElementById('series-grid').innerHTML =
+    DEMO_SERIES.map(s => buildSeriesCard(s)).join('');
+
+  const items = DEMO_MOVIES.map(m =>
+    `<span class="marquee-item"><span class="dot"></span>${esc(m.title)}</span>`).join('');
+  document.getElementById('marquee-track').innerHTML = items + items;
+}
+
+// ── Web Series demo data ──
+const DEMO_SERIES = [
+  { id: 84958,  name: 'Scam 1992',         first_air_date: '2020-10-09', vote_average: 9.5, original_language: 'hi', poster_path: null },
+  { id: 100088, name: 'The Family Man',     first_air_date: '2019-09-20', vote_average: 8.7, original_language: 'hi', poster_path: null },
+  { id: 97527,  name: 'Mirzapur',           first_air_date: '2018-11-16', vote_average: 8.5, original_language: 'hi', poster_path: null },
+  { id: 96680,  name: 'Sacred Games',       first_air_date: '2018-07-06', vote_average: 8.2, original_language: 'hi', poster_path: null },
+  { id: 148539, name: 'Panchayat',          first_air_date: '2020-04-03', vote_average: 9.0, original_language: 'hi', poster_path: null },
+  { id: 154008, name: 'Aspirants',          first_air_date: '2021-04-09', vote_average: 9.5, original_language: 'hi', poster_path: null },
+  { id: 102415, name: 'Delhi Crime',        first_air_date: '2019-03-22', vote_average: 8.5, original_language: 'hi', poster_path: null },
+  { id: 85937,  name: 'Breathe',            first_air_date: '2018-01-26', vote_average: 7.8, original_language: 'hi', poster_path: null },
+];
+
+function buildSeriesCard(show) {
+  const title = esc(show.name || show.title || '');
+  const img   = show.poster_path ? IMG_W500 + show.poster_path : null;
+  const score = show.vote_average ? '⭐ ' + show.vote_average.toFixed(1) : '';
+  const year  = (show.first_air_date || show.release_date || '').slice(0, 4);
+  const lang  = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali' }[show.original_language] || show.original_language?.toUpperCase() || '';
+  const id    = show.id;
+  const thumb = img
+    ? `<img src="${img}" alt="${title}" loading="lazy" onerror="imgError(this)" />`
+    : `<div class="card-thumb-fallback">
+         <div class="cf-icon">📺</div>
+         <div class="cf-title">${title}</div>
+         <div class="cf-lang">${[lang, year].filter(Boolean).join(' · ')}</div>
+       </div>`;
+  return `
+  <div class="movie-card" onclick="openTVPlayer(${id})">
+    <div class="card-thumb">
+      ${thumb}
+      <span class="badge tv">TV</span>
+      <div class="play-overlay"><div class="play-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>
+      </div></div>
+    </div>
+    <div class="card-info">
+      <h3>${title}</h3>
+      <div class="card-meta">
+        <span class="score">${score}</span>
+        <span>${year}</span>
+        ${lang ? `<span>${lang}</span>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+let allSeries = null;
+async function loadSeriesSection() {
+  if (!TMDB_BEARER) {
+    document.getElementById('series-grid').innerHTML = DEMO_SERIES.map(s => buildSeriesCard(s)).join('');
+    return;
+  }
+  renderSkeletons('series-grid', 6);
+  try {
+    await delay(750);
+    const d = await tmdbFetch('/trending/tv/week?region=IN&language=en-US');
+    const indian = d.results.filter(s => ['hi','ta','te','ml','kn','pa','bn','mr'].includes(s.original_language));
+    allSeries = indian.length >= 4 ? indian : d.results;
+    document.getElementById('series-grid').innerHTML = allSeries.slice(0, 8).map(s => buildSeriesCard(s)).join('');
+  } catch {
+    document.getElementById('series-grid').innerHTML = DEMO_SERIES.map(s => buildSeriesCard(s)).join('');
+  }
+}
+
+async function openTVPlayer(tmdbId) {
+  currentIsTV      = true;
+  currentMovieId   = tmdbId;
+  currentSourceIdx = 0;
+  currentYtKey     = null;
+  currentSeason    = 1;
+  currentEpisode   = 1;
+
+  playerModal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('tv-controls').style.display = 'block';
+  showTab('stream');
+  buildSrcStrip();
+
+  document.getElementById('pane-stream').innerHTML =
+    '<div class="modal-video-loading"><div class="modal-spinner"></div></div>';
+  document.getElementById('pane-trailer').innerHTML =
+    '<div class="modal-video-loading"><div class="modal-spinner"></div></div>';
+  document.getElementById('episode-list').innerHTML =
+    '<div style="padding:14px 0;display:flex;justify-content:center;"><div class="modal-spinner" style="width:24px;height:24px;"></div></div>';
+  document.getElementById('modal-info').innerHTML = `
+    <div class="skeleton" style="width:100%;aspect-ratio:2/3;border-radius:10px;margin-bottom:12px;"></div>
+    <div class="skeleton modal-skeleton-line" style="width:90%"></div>
+    <div class="skeleton modal-skeleton-line" style="width:65%"></div>
+    <div class="skeleton modal-skeleton-line" style="width:80%"></div>`;
+
+  try {
+    const [meta, vids] = await Promise.all([
+      tmdbFetch(`/tv/${tmdbId}?language=en-US`),
+      tmdbFetch(`/tv/${tmdbId}/videos?language=en-US`).catch(() => ({ results: [] })),
+    ]);
+
+    const trailer = (vids.results || []).find(v => v.type === 'Trailer' && v.site === 'YouTube')
+                 || (vids.results || []).find(v => v.site === 'YouTube');
+    currentYtKey = trailer?.key || null;
+
+    document.getElementById('pane-trailer').innerHTML = currentYtKey
+      ? `<div class="modal-yt-thumb" onclick="playTrailerInModal('${currentYtKey}', this)">
+           <img src="https://img.youtube.com/vi/${currentYtKey}/maxresdefault.jpg"
+                onerror="this.src='https://img.youtube.com/vi/${currentYtKey}/hqdefault.jpg'"
+                alt="Trailer thumbnail" />
+           <div class="modal-yt-play"><svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
+           <div class="modal-yt-label">CLICK TO PLAY TRAILER</div>
+         </div>`
+      : `<div class="modal-no-video"><div class="big-emoji">📺</div><div class="no-title">NO TRAILER FOUND</div></div>`;
+
+    const seasons = (meta.seasons || []).filter(s => s.season_number > 0);
+    const totalSeasons = seasons.length || meta.number_of_seasons || 1;
+    const sel = document.getElementById('season-select');
+    sel.innerHTML = Array.from({ length: totalSeasons }, (_, i) =>
+      `<option value="${i + 1}">Season ${i + 1}</option>`
+    ).join('');
+    sel.value = '1';
+
+    const title   = esc(meta.name || '');
+    const poster  = meta.poster_path ? IMG_W500 + meta.poster_path : '';
+    const score   = meta.vote_average?.toFixed(1) || '—';
+    const year    = meta.first_air_date?.slice(0, 4) || '';
+    const lang    = { hi:'Hindi', ta:'Tamil', te:'Telugu', ml:'Malayalam', kn:'Kannada', pa:'Punjabi', bn:'Bengali' }[meta.original_language] || meta.original_language?.toUpperCase() || '';
+    const status  = esc(meta.status || '');
+    const overview= esc(meta.overview || 'No description available.');
+    const genres  = (meta.genres || []).slice(0, 4).map(g => `<span class="genre-tag">${esc(g.name)}</span>`).join('');
+    const sLabel  = `${totalSeasons} Season${totalSeasons !== 1 ? 's' : ''}`;
+    const eLabel  = meta.number_of_episodes ? `${meta.number_of_episodes} Eps` : '';
+
+    document.getElementById('modal-info').innerHTML = `
+      ${poster
+        ? `<img class="modal-poster" src="${poster}" alt="${title}" loading="lazy" />`
+        : `<div class="modal-poster-placeholder">📺</div>`}
+      <div class="modal-title">${title}</div>
+      <div class="modal-genres">${genres}</div>
+      <div class="modal-score">${score}<span style="font-size:.75rem;font-family:'Rajdhani',sans-serif;color:#64748b;font-weight:400;"> / 10</span></div>
+      <div class="modal-meta-row">
+        <span class="modal-meta-item">🗓 ${year}</span>
+        <span class="modal-meta-item">📺 ${sLabel}</span>
+        ${eLabel ? `<span class="modal-meta-item">🎬 ${eLabel}</span>` : ''}
+        <span class="modal-meta-item">🗣 ${lang}</span>
+        <span class="modal-meta-item">📡 ${status}</span>
+      </div>
+      <p class="modal-synopsis">${overview}</p>
+      ${currentYtKey ? `<a class="modal-yt-link" href="https://www.youtube.com/watch?v=${currentYtKey}" target="_blank" rel="noopener noreferrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23 7s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C16.1 2.8 12 2.8 12 2.8s-4.1 0-6.8.1c-.6.1-1.9.1-3 1.3C1.3 5 1 7 1 7S.7 9.1.7 11.2v2c0 2.1.3 4.2.3 4.2s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C7.2 21.6 12 21.6 12 21.6s4.1 0 6.8-.2c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.1.3-4.2v-2C23.3 9.1 23 7 23 7zM9.7 15.5V8.4l8.1 3.6-8.1 3.5z"/></svg>
+        WATCH TRAILER
+      </a>` : ''}`;
+
+    await loadSeason(tmdbId, 1);
+  } catch(err) {
+    console.error(err);
+    document.getElementById('modal-info').innerHTML = '<div class="error-state"><p>Could not load series info.</p></div>';
+    document.getElementById('episode-list').innerHTML = '';
+  }
+  renderStreamEmbed();
+}
+
+async function loadSeason(seriesId, seasonNum) {
+  currentSeason  = seasonNum;
+  currentEpisode = 1;
+  document.getElementById('ep-count-label').textContent = 'LOADING…';
+  document.getElementById('episode-list').innerHTML =
+    '<div style="padding:12px 0;display:flex;justify-content:center;"><div class="modal-spinner" style="width:22px;height:22px;"></div></div>';
+  try {
+    const data = await tmdbFetch(`/tv/${seriesId}/season/${seasonNum}`);
+    const eps  = data.episodes || [];
+    document.getElementById('ep-count-label').textContent = `${eps.length} EPS`;
+    document.getElementById('episode-list').innerHTML = eps.map(ep =>
+      `<button class="ep-btn${ep.episode_number === 1 ? ' active' : ''}" onclick="playEpisode(${ep.episode_number})">
+         <span class="ep-num">E${String(ep.episode_number).padStart(2,'0')}</span>
+         <span class="ep-title">${esc(ep.name || 'Episode ' + ep.episode_number)}</span>
+       </button>`
+    ).join('');
+  } catch {
+    document.getElementById('ep-count-label').textContent = '';
+    document.getElementById('episode-list').innerHTML =
+      '<p style="padding:10px 14px;color:#475569;font-size:.8rem;">Could not load episodes.</p>';
+  }
+  renderStreamEmbed();
+}
+
+function playEpisode(epNum) {
+  currentEpisode = epNum;
+  document.querySelectorAll('.ep-btn').forEach(b => {
+    const n = parseInt(b.querySelector('.ep-num').textContent.replace('E',''), 10);
+    b.classList.toggle('active', n === epNum);
+  });
+  showTab('stream');
+  renderStreamEmbed();
+}
+
+// ═══════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════
+function bootAll() {
+  loadDemoData(); // Show demo cards instantly while API loads
+  // Live data always loads now (key is hardcoded)
+  loadFeatured();
+  loadTrending();
+  loadNowPlaying();
+  loadBollywood();
+  loadRegional(activeRegionalLang);
+  loadSeriesSection();
+  loadTopRated();
+  loadMarquee();
+}
+bootAll();
+</script>
 </body>
 </html>
