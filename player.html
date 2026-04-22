@@ -36,6 +36,35 @@
     </div>
   </div>
 
+  <!-- Album Detail Modal -->
+  <div class="album-modal-overlay" id="albumModal" onclick="closeAlbumModal()">
+    <div class="album-modal" onclick="event.stopPropagation()">
+      <button class="album-modal-close" onclick="closeAlbumModal()" title="Close">
+        <i class="fas fa-xmark"></i>
+      </button>
+      <div class="album-modal-header">
+        <div class="album-modal-cover-wrap">
+          <img class="album-modal-cover" id="albumModalCover" src="" alt="" />
+        </div>
+        <div class="album-modal-meta">
+          <div class="album-modal-label">Album</div>
+          <div class="album-modal-name" id="albumModalName"></div>
+          <div class="album-modal-artist" id="albumModalArtist"></div>
+          <div class="album-modal-count" id="albumModalCount"></div>
+          <div class="album-modal-actions">
+            <button class="album-modal-play-all" id="albumModalPlayAll">
+              <i class="fas fa-play"></i> Play All
+            </button>
+            <button class="album-modal-shuffle" id="albumModalShuffle">
+              <i class="fas fa-shuffle"></i> Shuffle
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="album-modal-tracks" id="albumModalTracks"></div>
+    </div>
+  </div>
+
   <!-- Profile Dropdown — fixed, outside sidebar to avoid overflow/stacking issues -->
   <div class="profile-dropdown" id="profileDropdown" onclick="event.stopPropagation()">
     <div class="dropdown-header">

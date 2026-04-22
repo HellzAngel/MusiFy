@@ -56,20 +56,26 @@ const JamendoAPI = (function () {
     }
   }
 
-  // Fetch from multiple queries, deduplicate by id
+  // Fetch from multiple queries, deduplicate by id — batched to avoid flooding the API
   async function fetchAll(queries, limit) {
     limit = limit || 80;
-    // Give each query a generous slice so API limits don't starve the pool
     const perQuery = Math.max(20, Math.ceil(limit / Math.max(1, queries.length)));
-    const results = await Promise.allSettled(queries.map(q => saavnFetch(q, perQuery)));
     const seen = new Set();
     const merged = [];
-    for (const r of results) {
-      if (r.status === 'fulfilled') {
-        for (const t of r.value) {
-          if (!seen.has(t.id)) { seen.add(t.id); merged.push(t); }
+    // Process in batches of 8 to avoid overwhelming the free Vercel endpoint
+    const BATCH = 8;
+    for (let i = 0; i < queries.length; i += BATCH) {
+      const batch = queries.slice(i, i + BATCH);
+      const results = await Promise.allSettled(batch.map(q => saavnFetch(q, perQuery)));
+      for (const r of results) {
+        if (r.status === 'fulfilled') {
+          for (const t of r.value) {
+            if (!seen.has(t.id)) { seen.add(t.id); merged.push(t); }
+          }
         }
       }
+      // Stop early if we already have enough tracks
+      if (merged.length >= limit) break;
     }
     return merged.length ? merged : null;
   }
@@ -217,11 +223,26 @@ const JamendoAPI = (function () {
     let queries;
     if (type === 'artist') {
       queries = [
-        q + ' songs', q + ' hits', q + ' latest songs',
-        q + ' best songs', q + ' top songs', q + ' all songs',
-        q + ' 2024', q + ' 2025', q + ' romantic songs',
-        q + ' sad songs', q + ' album', q + ' jukebox',
-        q + ' playlist', q + ' superhit songs',
+        q + ' songs',
+        q + ' hits',
+        q + ' best songs',
+        q + ' latest songs',
+        q + ' top songs',
+        q + ' all songs',
+        q + ' 2025',
+        q + ' 2024',
+        q + ' 2023',
+        q + ' romantic songs',
+        q + ' sad songs',
+        q + ' love songs',
+        q + ' melody songs',
+        q + ' mass songs',
+        q + ' album',
+        q + ' jukebox',
+        q + ' superhit songs',
+        q + ' blockbuster songs',
+        q + ' film songs',
+        q + ' evergreen songs',
       ];
     } else if (type === 'album') {
       queries = [
