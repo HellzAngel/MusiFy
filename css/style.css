@@ -2740,7 +2740,7 @@ body.light-theme .album-modal-shuffle {
 @media (max-width: 768px) {
   :root {
     --sidebar-width: 0px;
-    --player-height: 68px;
+    --player-height: 80px;
   }
 
   /* Dark overlay behind open sidebar — tap to close */
@@ -2813,12 +2813,34 @@ body.light-theme .album-modal-shuffle {
 
   .player-bar {
     grid-template-columns: 1fr auto;
-    padding: 0 14px;
-    gap: 10px;
+    padding: 0 16px;
+    gap: 12px;
+    height: 80px;
   }
   .player-controls { display:none; }
   .volume-controls { display:none; }
-  .player-bar .mobile-play { display:flex; align-items:center; gap:6px; }
+  .player-bar .mobile-play { display:flex; align-items:center; gap:10px; }
+
+  /* Bigger mobile play controls */
+  .player-bar .mobile-play .ctrl-btn {
+    font-size: 20px;
+    padding: 10px;
+    color: var(--text-1);
+  }
+  .player-bar .mobile-play .play-pause-btn {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+
+  /* Bigger album art + track info */
+  .player-album-art-wrap,
+  .player-album-art {
+    width: 54px;
+    height: 54px;
+  }
+  .player-track-title { font-size: 14px; }
+  .player-track-artist { font-size: 13px; }
 
   .track-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px; }
   .genre-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }

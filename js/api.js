@@ -56,11 +56,15 @@ const JamendoAPI = (function () {
     }
   }
 
-  // Fetch from multiple queries, deduplicate by id — batched to avoid flooding the API
+  // Normalise a string for fingerprinting: lowercase, strip punctuation/spaces
+  function _fp(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+  // Fetch from multiple queries, deduplicate by id AND by title+artist — batched
   async function fetchAll(queries, limit) {
     limit = limit || 80;
     const perQuery = Math.max(20, Math.ceil(limit / Math.max(1, queries.length)));
-    const seen = new Set();
+    const seenId = new Set();
+    const seenFp = new Set();
     const merged = [];
     // Process in batches of 8 to avoid overwhelming the free Vercel endpoint
     const BATCH = 8;
@@ -70,7 +74,12 @@ const JamendoAPI = (function () {
       for (const r of results) {
         if (r.status === 'fulfilled') {
           for (const t of r.value) {
-            if (!seen.has(t.id)) { seen.add(t.id); merged.push(t); }
+            const fp = _fp(t.title) + '|' + _fp(t.artist);
+            if (!seenId.has(t.id) && !seenFp.has(fp)) {
+              seenId.add(t.id);
+              seenFp.add(fp);
+              merged.push(t);
+            }
           }
         }
       }

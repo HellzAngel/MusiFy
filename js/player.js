@@ -1069,21 +1069,34 @@ async function browseArtist(name, lang) {
     return filtered;
   }
 
+  // Deduplicate by title+artist fingerprint (catches same song with different IDs)
+  function _dedupTracks(tracks) {
+    const seen = new Set();
+    return tracks.filter(t => {
+      const fp = (t.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') +
+                 '|' + (t.artist || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (seen.has(fp)) return false;
+      seen.add(fp);
+      return true;
+    });
+  }
+
   function _renderArtistView(all, lang) {
+    const unique = _dedupTracks(all);
     const songsElR  = document.getElementById('artistSongsList');
     const albumsElR = document.getElementById('artistAlbumsGrid');
     const metaElR   = document.getElementById('artistDetailMeta');
-    if (metaElR) metaElR.textContent = all.length
-      ? `${all.length} song${all.length !== 1 ? 's' : ''} · ${(JamendoAPI.LANGUAGES[lang] || '')}`.trim()
+    if (metaElR) metaElR.textContent = unique.length
+      ? `${unique.length} song${unique.length !== 1 ? 's' : ''} · ${(JamendoAPI.LANGUAGES[lang] || '')}`.trim()
       : 'No songs found';
     if (songsElR) {
-      songsElR.innerHTML = all.length
-        ? renderTracksAsList(all)
+      songsElR.innerHTML = unique.length
+        ? renderTracksAsList(unique)
         : '<div style="color:var(--text-2);padding:24px;">No songs found for this artist.</div>';
     }
     if (albumsElR) {
       const albumMap = {};
-      all.forEach(t => {
+      unique.forEach(t => {
         const key = t.album || 'Singles';
         if (!albumMap[key]) albumMap[key] = { name: key, cover: t.cover, tracks: [] };
         albumMap[key].tracks.push(t);
