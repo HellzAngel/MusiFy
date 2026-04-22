@@ -620,6 +620,7 @@ function deactivateSmartRadio() {
 }
 
 function handleListItemClick(el) {
+  closeAlbumModal();
   const listId = el.dataset.list;
   const index = parseInt(el.dataset.index, 10);
   const queue = _listQueues[listId] || State.queue;
@@ -1051,47 +1052,36 @@ async function browseArtist(name, lang) {
   if (songsEl)  songsEl.innerHTML  = skeletonRows(6);
   if (albumsEl) albumsEl.innerHTML = '';
 
-  try {
-    const tracks = await JamendoAPI.searchTracks(name, 80, 'artist');
-
-    // Keep only tracks whose artist field actually contains this artist's name
+  // Helper: filter tracks to ones that genuinely match the artist name
+  function _filterByArtist(tracks, name) {
     const nameLower = name.toLowerCase().trim();
     const nameWords = nameLower.split(/\s+/).filter(Boolean);
-
     function artistMatches(artistField) {
       if (!artistField) return false;
       const af = artistField.toLowerCase();
-      // All words of the searched name must appear in the artist field
       return nameWords.every(w => af.includes(w));
     }
-
     let filtered = tracks.filter(t => artistMatches(t.artist));
-
-    // If too few, relax to: artist field contains the longest word of the name
     if (filtered.length < 3) {
       const mainWord = nameWords.reduce((a, b) => a.length >= b.length ? a : b, '');
-      if (mainWord) {
-        filtered = tracks.filter(t => (t.artist || '').toLowerCase().includes(mainWord));
-      }
+      if (mainWord) filtered = tracks.filter(t => (t.artist || '').toLowerCase().includes(mainWord));
     }
+    return filtered;
+  }
 
-    // Never dump all unrelated tracks — use what we have (even if empty)
-    const all = filtered;
-    mergeIntoAll(all);
-    State.queue = [...all];
-
-    if (metaEl) metaEl.textContent = all.length
+  function _renderArtistView(all, lang) {
+    const songsElR  = document.getElementById('artistSongsList');
+    const albumsElR = document.getElementById('artistAlbumsGrid');
+    const metaElR   = document.getElementById('artistDetailMeta');
+    if (metaElR) metaElR.textContent = all.length
       ? `${all.length} song${all.length !== 1 ? 's' : ''} · ${(JamendoAPI.LANGUAGES[lang] || '')}`.trim()
       : 'No songs found';
-
-    if (songsEl) {
-      songsEl.innerHTML = all.length
+    if (songsElR) {
+      songsElR.innerHTML = all.length
         ? renderTracksAsList(all)
         : '<div style="color:var(--text-2);padding:24px;">No songs found for this artist.</div>';
     }
-
-    // Group by album
-    if (albumsEl) {
+    if (albumsElR) {
       const albumMap = {};
       all.forEach(t => {
         const key = t.album || 'Singles';
@@ -1099,22 +1089,49 @@ async function browseArtist(name, lang) {
         albumMap[key].tracks.push(t);
       });
       const albums = Object.values(albumMap).sort((a, b) => b.tracks.length - a.tracks.length);
-      albumsEl.innerHTML = albums.length ? albums.map(al => `
-        <div class="album-card" data-album="${escHtml(al.name)}" onclick="playAlbum(this.dataset.album)">
+      albumsElR.innerHTML = albums.length ? albums.map(al => `
+        <div class="album-card" data-album="${escHtml(al.name)}" onclick="openAlbumView(this.dataset.album)">
           <div class="album-card-cover-wrap">
             <img class="album-card-cover" src="${escHtml(al.cover || '')}" alt="${escHtml(al.name)}"
                  loading="lazy" onerror="this.style.display='none'" />
-            <div class="album-card-play"><i class="fas fa-play"></i></div>
+            <div class="album-card-play"><i class="fas fa-list"></i></div>
           </div>
           <div class="album-card-info">
             <div class="album-card-name">${escHtml(al.name)}</div>
-            <div class="album-card-count">${al.tracks.length} track${al.tracks.length !== 1 ? 's' : ''}</div>
+            <div class="album-card-count">${al.tracks.length} song${al.tracks.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
       `).join('') : '<div style="color:var(--text-2);padding:12px 0;">No albums found.</div>';
     }
+  }
 
+  try {
+    const rawTracks = await JamendoAPI.searchTracks(name, 200, 'artist');
+    const all = _filterByArtist(rawTracks, name);
+    mergeIntoAll(all);
+    State.queue = [...all];
+    _renderArtistView(all, lang);
     if (all.length) showToast(`${all.length} songs by ${name}`, 'success');
+
+    // Background top-up: fetch more via getSimilarTracks and append unique results
+    if (all.length > 0) {
+      JamendoAPI.getSimilarTracks(all[0], 120).then(extra => {
+        if (!extra || !extra.length) return;
+        // Keep only tracks by this artist from the extra batch
+        const artistExtra = _filterByArtist(extra, name);
+        if (!artistExtra.length) return;
+        const existing = new Set(State.queue.map(t => t.id));
+        const fresh = artistExtra.filter(t => !existing.has(t.id));
+        if (!fresh.length) return;
+        mergeIntoAll(fresh);
+        State.queue = [...State.queue, ...fresh];
+        _renderArtistView(State.queue.filter(t => {
+          const af = (t.artist || '').toLowerCase();
+          return name.toLowerCase().split(/\s+/).every(w => af.includes(w));
+        }), lang);
+        showToast(`+${fresh.length} more songs added`, 'info');
+      }).catch(() => {});
+    }
   } catch(e) {
     if (songsEl)  songsEl.innerHTML  = '<div style="color:var(--text-2);padding:24px;">Could not load songs.</div>';
     if (metaEl)   metaEl.textContent = 'Error loading';
@@ -1126,7 +1143,54 @@ function goBackToArtists() {
   else switchView('home', document.querySelector('[data-view=home]'));
 }
 
+let _currentAlbumName = '';
+
+function openAlbumView(albumName) {
+  const fromQueue = State.queue.filter(t => t.album === albumName);
+  const tracks = fromQueue.length
+    ? fromQueue
+    : State.allTracks.filter(t => t.album === albumName);
+  if (!tracks.length) { showToast('No tracks loaded for this album', 'info'); return; }
+
+  _currentAlbumName = albumName;
+  const first = tracks[0];
+
+  const coverEl   = document.getElementById('albumModalCover');
+  const nameEl    = document.getElementById('albumModalName');
+  const artistEl  = document.getElementById('albumModalArtist');
+  const countEl   = document.getElementById('albumModalCount');
+  const tracksEl  = document.getElementById('albumModalTracks');
+  const playAllBtn = document.getElementById('albumModalPlayAll');
+  const shuffleBtn = document.getElementById('albumModalShuffle');
+
+  if (coverEl)  { coverEl.src = first.cover || ''; coverEl.alt = escHtml(albumName); }
+  if (nameEl)   nameEl.textContent   = albumName;
+  if (artistEl) artistEl.textContent = first.artist || '';
+  if (countEl)  countEl.textContent  = `${tracks.length} song${tracks.length !== 1 ? 's' : ''} in this album`;
+  if (tracksEl) tracksEl.innerHTML   = renderTracksAsList(tracks);
+
+  if (playAllBtn) playAllBtn.onclick = function() { playAlbum(albumName); };
+  if (shuffleBtn) shuffleBtn.onclick = function() {
+    const shuffled = [...tracks].sort(() => Math.random() - 0.5);
+    closeAlbumModal();
+    deactivateSmartRadio();
+    State.queue = shuffled;
+    State.queueIndex = 0;
+    playTrack(State.queue[0]);
+    showToast(`Shuffling "${albumName}"`, 'success');
+  };
+
+  const modal = document.getElementById('albumModal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeAlbumModal() {
+  const modal = document.getElementById('albumModal');
+  if (modal) modal.classList.remove('open');
+}
+
 function playAlbum(albumName) {
+  closeAlbumModal();
   // Prefer tracks already in the current queue (filtered to the right artist/context)
   // so album playback doesn't pull in unrelated songs from allTracks
   const fromQueue = State.queue.filter(t => t.album === albumName);
@@ -1313,15 +1377,15 @@ async function performSearch(query) {
     const albums = Object.values(albumMap).sort((a, b) => b.tracks.length - a.tracks.length);
     results.innerHTML = `<div class="artist-albums-grid" style="padding-top:12px;">` +
       albums.map(al => `
-        <div class="album-card" data-album="${escHtml(al.name)}" onclick="playAlbum(this.dataset.album)">
+        <div class="album-card" data-album="${escHtml(al.name)}" onclick="openAlbumView(this.dataset.album)">
           <div class="album-card-cover-wrap">
             <img class="album-card-cover" src="${escHtml(al.cover || '')}" alt="${escHtml(al.name)}"
                  loading="lazy" onerror="this.style.display='none'" />
-            <div class="album-card-play"><i class="fas fa-play"></i></div>
+            <div class="album-card-play"><i class="fas fa-list"></i></div>
           </div>
           <div class="album-card-info">
             <div class="album-card-name">${escHtml(al.name)}</div>
-            <div class="album-card-count">${escHtml(al.artist)} · ${al.tracks.length} track${al.tracks.length !== 1 ? 's' : ''}</div>
+            <div class="album-card-count">${escHtml(al.artist)} · ${al.tracks.length} song${al.tracks.length !== 1 ? 's' : ''}</div>
           </div>
         </div>`).join('') + `</div>`;
 
