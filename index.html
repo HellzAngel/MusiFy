@@ -889,22 +889,28 @@
     animate();
   })();
 
-  // =============================================
-  //  LOGIN LOGIC
-  // =============================================
+  // ==  // Passwords stored as SHA-256 hashes only — plaintext never in source
+  const USERS = {
+    surya:   { ph: '34a12809061e749271ae972328cd38bdd7fe3fc83bcfd5fc922e01dd1c3ba376', name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
+    ananthu: { ph: '77cce19facdc944ca9e5418413862881a33c731ed33f67ff254699f1b9570c77', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
+    devika:  { ph: 'c99bc6f668e8999a380975a9be485150f91070498f11f5bf0d56f67eb0f68930', name: 'Devika',  avatar: 'D', color: '#f472b6' },
+    sonu:    { ph: '65799f51379727f9a584975c238568cd1c570ef0873c10f3d5a546fcbe6073f3', name: 'Sonu',    avatar: 'S', color: '#34d399' },
+    bromin:  { ph: '080b9643325aeb8de8c556420ab27403c28a13ef5a8d40d8fec0bf9adada73a8', name: 'Bromin',  avatar: 'B', color: '#f97316' },
+    arjun:   { ph: '26a95b1e69c92f1cfb0381fd379d80526ecd9c368d3a7baa9be6c24b61a25e71', name: 'Arjun',   avatar: 'A', color: '#ef4444' },
+    deva:    { ph: '55ac2b3161e9c9e2ecb04869ae5e4d6b372f6f1733fede2a06738af09a761c59', name: 'Deva',    avatar: 'D', color: '#a855f7' },
+    amal:    { ph: '24bb9a41fcc4b3db6a3450ed9171b8c23ee9b494659f6ebfb697b30ea83d1fac', name: 'Amal',    avatar: 'A', color: '#10b981' },
+    sounder: { ph: 'c8d22056fcdcff4bc5dd5bee816553dc939adc6ac0d68d9fff05c9d8c9cf9338', name: 'Sounder', avatar: 'S', color: '#fb923c' },
+    zlatan:  { ph: 'a07c9be3cf72583e2829199730b483412c4280ce3fb210bc99237671447780d4', name: 'Zlatan',  avatar: 'Z', color: '#38bdf8' },
+    athu:    { ph: 'ae20f98677a4659ee2e6a1e7a85176cc17ae4574d0ba6c81072ea2e4a161b5cb', name: 'Athu',    avatar: 'A', color: '#4ade80' },
+    mahesh:  { ph: 'b7dafc766296428c56acaf95031aa8e644b667bc3a8358251613d9b2fbd16fa7', name: 'Mahesh',  avatar: 'M', color: '#f59e0b' },
+    abhilash:{ ph: 'bd39d425737af9e02ee8dbe2ebc9cf6385340c9f8b90fd0b41eac30f98ac433e', name: 'Abhilash', avatar: 'A', color: '#6366f1' }
+  };
 
-
-
-  // Remove loading screen from DOM after 4 s (CSS fades it at 3.5 s)
+  // Remove loading screen from DOM after 4 s
   setTimeout(() => {
     const ls = document.getElementById('loadScreen');
     if (ls) ls.remove();
   }, 4000);
-
-  async function sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-  }
 
   const form = document.getElementById('loginForm');
   const usernameInput = document.getElementById('username');
@@ -961,43 +967,45 @@
 
     loginBtn.classList.add('loading');
 
-    // Hash the password on the client to match the seed data securely
-    async function sha256(msg) {
-      const data = new TextEncoder().encode(msg);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-    const inputHash = await sha256(password);
+    // Basic hash for demo — (in production never hash on client)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const passHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    try {
-      const res = await fetch('http://localhost:3000/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, passwordHash: inputHash })
-      });
-
-      const data = await res.json();
+    const validUser = USERS[username];
+    if (validUser && validUser.ph === passHash) {
       
-      if (!res.ok || !data.success) {
-        showError(data.error || 'Invalid username or password');
-        loginBtn.classList.remove('loading');
-        return;
-      }
-
-      // Success — store session & redirect
-      sessionStorage.setItem('musify_session', JSON.stringify({
-        username: data.user.username,
-        name: data.user.name,
-        avatar: data.user.avatar,
-        color: data.user.color,
-        loginTime: Date.now()
+      // Store current session
+      localStorage.setItem('musify_user', JSON.stringify({
+        username: username,
+        name:     validUser.name,
+        avatar:   validUser.avatar,
+        color:    validUser.color
       }));
 
-      // Animate out and redirect
-      document.querySelector('.right-panel').style.transition = 'all 0.5s ease';
-      document.querySelector('.right-panel').style.transform = 'translateX(40px)';
-      document.querySelector('.right-panel').style.opacity = '0';
+      // Ensure user exists in favorites DB so it doesn't get wiped
+      const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
+      if (!existing[username]) {
+        existing[username] = { favorites: [] };
+        localStorage.setItem('musify_users', JSON.stringify(existing));
+      }
+
+      // Slide card down, then fade out screen
+      const card = document.querySelector('.login-card');
+      card.style.animation = 'none';
+      card.style.transform = 'translateY(0)';
+      
+      void card.offsetWidth;
+      
+      card.style.transition = 'all 0.5s cubic-bezier(0.4,0,0.2,1)';
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(30px) scale(0.95)';
+      
+      const wrap = document.querySelector('.page-wrap');
+      wrap.style.transition = 'opacity 0.6s ease';
+      wrap.style.opacity = '0';
 
       setTimeout(() => {
         window.location.replace('player.html');
