@@ -226,84 +226,159 @@
           </div>
 
           <!-- Language Cards -->
-          <div class="browse-section">
-            <div class="browse-section-header">
-              <canvas class="browse-deco-canvas" id="langDecoCanvas"></canvas>
-              <h2 class="browse-section-title">Languages</h2>
+          <div class="lang-section">
+            <div class="lang-section-header">
+              <div class="lang-section-label">
+                <span class="lang-section-pill"><i class="fas fa-globe-asia"></i> Browse</span>
+                <h2 class="lang-section-title">Languages</h2>
+              </div>
+              <p class="lang-section-sub">Choose a language to explore artists &amp; songs</p>
             </div>
-            <div class="browse-cards-grid browse-cards-4">
+            <div class="lang-cards-grid">
 
               <!-- Tamil -->
-              <div class="browse-card lang-card" style="--c1:#7c3aed;--c2:#2563eb;" onclick="browseLanguage('ta')">
-                <div class="lc-shine"></div>
-                <div class="lc-icon-wrap">
-                  <!-- Veena: body + neck + resonator + frets -->
-                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="12" cy="20" rx="6.5" ry="4.5" fill="white" opacity="0.95"/>
-                    <rect x="11" y="3" width="2" height="17" rx="1" fill="white" opacity="0.85"/>
-                    <ellipse cx="12" cy="4" rx="3.5" ry="2.8" fill="white" opacity="0.72"/>
-                    <line x1="10.5" y1="9"  x2="13.5" y2="9"  stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
-                    <line x1="10.5" y1="12" x2="13.5" y2="12" stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
-                    <line x1="10.5" y1="15" x2="13.5" y2="15" stroke="white" stroke-width="0.7" fill="none" opacity="0.5"/>
-                  </svg>
+              <div class="lang-card-v2" style="--lc1:#7c3aed;--lc2:#4f46e5;--lc3:#1e1b4b;" onclick="browseLanguage('ta')">
+                <div class="lc2-bg-blur"></div>
+                <div class="lc2-shine"></div>
+                <div class="lc2-top">
+                  <div class="lc2-flag-wrap">
+                    <span class="lc2-flag">🇮🇳</span>
+                    <div class="lc2-icon-badge">
+                      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="12" cy="20" rx="6.5" ry="4.5" fill="white" opacity="0.95"/>
+                        <rect x="11" y="3" width="2" height="17" rx="1" fill="white" opacity="0.85"/>
+                        <ellipse cx="12" cy="4" rx="3.5" ry="2.8" fill="white" opacity="0.72"/>
+                        <line x1="10.5" y1="9"  x2="13.5" y2="9"  stroke="white" stroke-width="0.7" opacity="0.5"/>
+                        <line x1="10.5" y1="12" x2="13.5" y2="12" stroke="white" stroke-width="0.7" opacity="0.5"/>
+                        <line x1="10.5" y1="15" x2="13.5" y2="15" stroke="white" stroke-width="0.7" opacity="0.5"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="lc2-waveform" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
                 </div>
-                <div class="browse-card-name">Tamil</div>
-                <div class="browse-card-sub">Classical · Film · Folk</div>
-                <div class="browse-card-glow"></div>
+                <div class="lc2-mid">
+                  <div class="lc2-name">Tamil</div>
+                  <div class="lc2-script">தமிழ்</div>
+                </div>
+                <div class="lc2-bottom">
+                  <div class="lc2-genres">
+                    <span class="lc2-genre-pill">Classical</span>
+                    <span class="lc2-genre-pill">Film</span>
+                    <span class="lc2-genre-pill">Folk</span>
+                  </div>
+                  <div class="lc2-cta"><i class="fas fa-arrow-right"></i></div>
+                </div>
+                <div class="lc2-glow"></div>
               </div>
 
               <!-- Malayalam -->
-              <div class="browse-card lang-card" style="--c1:#0891b2;--c2:#6d28d9;" onclick="browseLanguage('ml')">
-                <div class="lc-shine"></div>
-                <div class="lc-icon-wrap">
-                  <!-- Chenda: horizontal drum + sticks -->
-                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="5" y="9" width="14" height="7" rx="1.5" fill="white" opacity="0.9"/>
-                    <ellipse cx="5"  cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
-                    <ellipse cx="19" cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
-                    <line x1="8"  y1="3" x2="6"  y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.85"/>
-                    <line x1="16" y1="3" x2="18" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.85"/>
-                  </svg>
+              <div class="lang-card-v2" style="--lc1:#0891b2;--lc2:#6d28d9;--lc3:#0c1a2e;" onclick="browseLanguage('ml')">
+                <div class="lc2-bg-blur"></div>
+                <div class="lc2-shine"></div>
+                <div class="lc2-top">
+                  <div class="lc2-flag-wrap">
+                    <span class="lc2-flag">🇮🇳</span>
+                    <div class="lc2-icon-badge">
+                      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="5" y="9" width="14" height="7" rx="1.5" fill="white" opacity="0.9"/>
+                        <ellipse cx="5"  cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
+                        <ellipse cx="19" cy="12.5" rx="2.8" ry="3.8" fill="white" opacity="0.72"/>
+                        <line x1="8"  y1="3" x2="6"  y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+                        <line x1="16" y1="3" x2="18" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="lc2-waveform" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
                 </div>
-                <div class="browse-card-name">Malayalam</div>
-                <div class="browse-card-sub">Classical · Melody · Fusion</div>
-                <div class="browse-card-glow"></div>
+                <div class="lc2-mid">
+                  <div class="lc2-name">Malayalam</div>
+                  <div class="lc2-script">മലയാളം</div>
+                </div>
+                <div class="lc2-bottom">
+                  <div class="lc2-genres">
+                    <span class="lc2-genre-pill">Classical</span>
+                    <span class="lc2-genre-pill">Melody</span>
+                    <span class="lc2-genre-pill">Fusion</span>
+                  </div>
+                  <div class="lc2-cta"><i class="fas fa-arrow-right"></i></div>
+                </div>
+                <div class="lc2-glow"></div>
               </div>
 
               <!-- Hindi -->
-              <div class="browse-card lang-card" style="--c1:#f59e0b;--c2:#dc2626;" onclick="browseLanguage('hi')">
-                <div class="lc-shine"></div>
-                <div class="lc-icon-wrap">
-                  <!-- Sitar: pear body + long neck + upper gourd -->
-                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <ellipse cx="12" cy="20.5" rx="6" ry="3.5" fill="white" opacity="0.95"/>
-                    <ellipse cx="12" cy="16"   rx="3.5" ry="2.5" fill="white" opacity="0.65"/>
-                    <path d="M12 5 Q13 10 12.5 17" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85"/>
-                    <ellipse cx="12" cy="5.5" rx="3" ry="2.2" fill="white" opacity="0.72"/>
-                    <path d="M12 3.5 Q10 2.5 10.5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
-                  </svg>
+              <div class="lang-card-v2" style="--lc1:#f59e0b;--lc2:#dc2626;--lc3:#1c0a00;" onclick="browseLanguage('hi')">
+                <div class="lc2-bg-blur"></div>
+                <div class="lc2-shine"></div>
+                <div class="lc2-top">
+                  <div class="lc2-flag-wrap">
+                    <span class="lc2-flag">🇮🇳</span>
+                    <div class="lc2-icon-badge">
+                      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <ellipse cx="12" cy="20.5" rx="6" ry="3.5" fill="white" opacity="0.95"/>
+                        <ellipse cx="12" cy="16"   rx="3.5" ry="2.5" fill="white" opacity="0.65"/>
+                        <path d="M12 5 Q13 10 12.5 17" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.85"/>
+                        <ellipse cx="12" cy="5.5" rx="3" ry="2.2" fill="white" opacity="0.72"/>
+                        <path d="M12 3.5 Q10 2.5 10.5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="lc2-waveform" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
                 </div>
-                <div class="browse-card-name">Hindi</div>
-                <div class="browse-card-sub">Bollywood · Pop · Classical</div>
-                <div class="browse-card-glow"></div>
+                <div class="lc2-mid">
+                  <div class="lc2-name">Hindi</div>
+                  <div class="lc2-script">हिन्दी</div>
+                </div>
+                <div class="lc2-bottom">
+                  <div class="lc2-genres">
+                    <span class="lc2-genre-pill">Bollywood</span>
+                    <span class="lc2-genre-pill">Pop</span>
+                    <span class="lc2-genre-pill">Classical</span>
+                  </div>
+                  <div class="lc2-cta"><i class="fas fa-arrow-right"></i></div>
+                </div>
+                <div class="lc2-glow"></div>
               </div>
 
               <!-- English -->
-              <div class="browse-card lang-card" style="--c1:#10b981;--c2:#1d4ed8;" onclick="browseLanguage('en')">
-                <div class="lc-shine"></div>
-                <div class="lc-icon-wrap">
-                  <!-- Studio microphone -->
-                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="white" opacity="0.95"/>
-                    <line x1="8.5" y1="8"  x2="15.5" y2="8"  stroke="rgba(0,0,0,0.2)" stroke-width="0.8" fill="none"/>
-                    <line x1="8.5" y1="11" x2="15.5" y2="11" stroke="rgba(0,0,0,0.2)" stroke-width="0.8" fill="none"/>
-                    <rect x="10.5" y="14.5" width="3" height="5" rx="1.5" fill="white" opacity="0.82"/>
-                    <path d="M7 21.5 Q12 18.5 17 21.5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.72"/>
-                  </svg>
+              <div class="lang-card-v2" style="--lc1:#10b981;--lc2:#1d4ed8;--lc3:#03120e;" onclick="browseLanguage('en')">
+                <div class="lc2-bg-blur"></div>
+                <div class="lc2-shine"></div>
+                <div class="lc2-top">
+                  <div class="lc2-flag-wrap">
+                    <span class="lc2-flag">🌐</span>
+                    <div class="lc2-icon-badge">
+                      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="white" opacity="0.95"/>
+                        <line x1="8.5" y1="8"  x2="15.5" y2="8"  stroke="rgba(0,0,0,0.2)" stroke-width="0.8"/>
+                        <line x1="8.5" y1="11" x2="15.5" y2="11" stroke="rgba(0,0,0,0.2)" stroke-width="0.8"/>
+                        <rect x="10.5" y="14.5" width="3" height="5" rx="1.5" fill="white" opacity="0.82"/>
+                        <path d="M7 21.5 Q12 18.5 17 21.5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.72"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="lc2-waveform" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span><span></span>
+                  </div>
                 </div>
-                <div class="browse-card-name">English</div>
-                <div class="browse-card-sub">Pop · Rock · Global</div>
-                <div class="browse-card-glow"></div>
+                <div class="lc2-mid">
+                  <div class="lc2-name">English</div>
+                  <div class="lc2-script">Global Music</div>
+                </div>
+                <div class="lc2-bottom">
+                  <div class="lc2-genres">
+                    <span class="lc2-genre-pill">Pop</span>
+                    <span class="lc2-genre-pill">Rock</span>
+                    <span class="lc2-genre-pill">Global</span>
+                  </div>
+                  <div class="lc2-cta"><i class="fas fa-arrow-right"></i></div>
+                </div>
+                <div class="lc2-glow"></div>
               </div>
 
             </div>

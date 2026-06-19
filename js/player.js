@@ -1518,9 +1518,13 @@ function playTrackFromList(index) {
   playTrack(State.queue[index] || State.allTracks[index]);
 }
 
+// Per-track retry counter — reset every time we start a new track
+let _audioRetryCount = 0;
+
 function playTrack(track) {
   if (!track) return;
 
+  _audioRetryCount = 0; // reset retry state for the new track
   ensureAudioContext();
 
   // Push the current track to history before switching (max 200 entries)
@@ -1589,6 +1593,9 @@ function playTrack(track) {
   }
 
   document.title = `${track.title} — MusiFy`;
+
+  // Update lock-screen / notification media metadata
+  updateMediaSession(track);
 }
 
 function togglePlay() {
@@ -1876,33 +1883,205 @@ audio.addEventListener('ended', () => {
 audio.addEventListener('error', (e) => {
   const err = audio.error;
   const code = err ? err.code : 0;
-  console.warn('Audio error code:', code, e);
+  console.warn('[Audio error] code:', code, e);
 
   if (!State.currentTrack) return;
 
-  // MEDIA_ERR_SRC_NOT_SUPPORTED (4) or MEDIA_ERR_NETWORK (2) — try CDN fallback
   const trackId = State.currentTrack.id;
-  const cdnUrl = `https://mp3l.jamendo.com/?trackid=${encodeURIComponent(trackId)}&format=mp31`;
-  const currentSrc = audio.src;
 
-  if (currentSrc !== cdnUrl) {
-    console.info('Retrying with Jamendo CDN URL...');
-    audio.src = cdnUrl;
+  // Build an ordered list of fallback URLs to try before giving up
+  const fallbackUrls = [
+    `https://mp3l.jamendo.com/?trackid=${encodeURIComponent(trackId)}&format=mp31`,
+    `https://mp3l.jamendo.com/?trackid=${encodeURIComponent(trackId)}&format=mp32`,
+  ];
+
+  // Find the next URL we haven't tried yet (skip any that match current src)
+  const nextUrl = fallbackUrls[_audioRetryCount];
+
+  if (nextUrl && audio.src !== nextUrl) {
+    _audioRetryCount++;
+    console.info(`[Audio retry ${_audioRetryCount}] Trying: ${nextUrl}`);
+    audio.src = nextUrl;
     audio.load();
     audio.play().then(() => {
       State.isPlaying = true;
       updatePlayButtons(true);
     }).catch(() => {
-      showToast('Cannot play this track — trying next', 'warning', 'fa-triangle-exclamation');
-      setTimeout(nextTrack, 1200);
+      // play() rejection will cause another error event which retries or skips
     });
+  } else if (_audioRetryCount < fallbackUrls.length) {
+    // Already on this URL but count not exhausted — advance manually
+    _audioRetryCount++;
+    const altUrl = fallbackUrls[_audioRetryCount - 1];
+    if (altUrl && audio.src !== altUrl) {
+      audio.src = altUrl;
+      audio.load();
+      audio.play().catch(() => {});
+    } else {
+      // All fallbacks exhausted — skip to next track
+      _audioRetryCount = 0;
+      showToast('Cannot play this track — trying next', 'warning', 'fa-triangle-exclamation');
+      setTimeout(nextTrack, 3000);
+    }
   } else {
+    // All fallbacks exhausted
+    _audioRetryCount = 0;
     showToast('Cannot play this track — trying next', 'warning', 'fa-triangle-exclamation');
-    setTimeout(nextTrack, 1200);
+    setTimeout(nextTrack, 3000);
   }
 });
 audio.addEventListener('canplay', () => {
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+});
+
+// =============================================
+//  MEDIA SESSION API (lock-screen / notification controls)
+// =============================================
+
+function updateMediaSession(track) {
+  if (!('mediaSession' in navigator) || !track) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  track.title  || 'Unknown Title',
+      artist: track.artist || 'Unknown Artist',
+      album:  track.album  || 'MusiFy',
+      artwork: track.cover
+        ? [{ src: track.cover, sizes: '300x300', type: 'image/jpeg' }]
+        : [],
+    });
+    navigator.mediaSession.playbackState = 'playing';
+  } catch (_) { /* Media Session not fully supported */ }
+}
+
+function setupMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const safe = fn => (...args) => { try { fn(...args); } catch(e) { console.warn('MediaSession handler error', e); } };
+  navigator.mediaSession.setActionHandler('play', safe(() => {
+    audio.play().then(() => { State.isPlaying = true; updatePlayButtons(true); }).catch(() => {});
+    if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing';
+  }));
+  navigator.mediaSession.setActionHandler('pause', safe(() => {
+    audio.pause();
+    State.isPlaying = false;
+    updatePlayButtons(false);
+    if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused';
+  }));
+  navigator.mediaSession.setActionHandler('nexttrack',     safe(() => nextTrack()));
+  navigator.mediaSession.setActionHandler('previoustrack', safe(() => prevTrack()));
+  try {
+    navigator.mediaSession.setActionHandler('seekbackward', safe((d) => {
+      audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || 10));
+    }));
+    navigator.mediaSession.setActionHandler('seekforward', safe((d) => {
+      audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + (d.seekOffset || 10));
+    }));
+    navigator.mediaSession.setActionHandler('seekto', safe((d) => {
+      if (d.seekTime !== undefined) audio.currentTime = d.seekTime;
+    }));
+  } catch(_) { /* older browsers don't support seek handlers */ }
+}
+
+// =============================================
+//  BACKGROUND PLAYBACK WATCHDOG
+//  Mobile browsers often swallow audio.ended events when the tab
+//  is backgrounded, causing playback to silently stall after a song.
+//  This 1-second heartbeat catches that and advances to the next track.
+// =============================================
+
+let _bgWatchdog = null;
+let _lastAudioTime = 0;
+let _stalledTicks  = 0;
+
+function startBgWatchdog() {
+  if (_bgWatchdog) return;
+  _bgWatchdog = setInterval(() => {
+    // 1) If audio reports ended but ended-event wasn't fired (background tab bug)
+    if (State.isPlaying && audio.ended) {
+      console.info('[Watchdog] audio.ended detected in background — advancing track');
+      if (State.repeatMode === 'one') {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else {
+        nextTrack();
+      }
+      return;
+    }
+
+    // 2) Detect truly stalled audio (currentTime frozen for >12 s while browser says it's playing)
+    //    readyState < 2 (HAVE_CURRENT_DATA) means the browser is still buffering — not a real stall.
+    //    Only count frozen ticks when we actually have data to play.
+    const isActivelyPlaying = State.isPlaying && !audio.paused && !audio.ended
+                              && audio.readyState >= 2; // HAVE_CURRENT_DATA or higher
+    if (isActivelyPlaying) {
+      if (audio.currentTime === _lastAudioTime) {
+        _stalledTicks++;
+        if (_stalledTicks >= 12) { // 12 seconds of genuine freeze before acting
+          console.info('[Watchdog] Genuinely stalled audio — recovering');
+          _stalledTicks = 0;
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+              audio.play().catch(() => nextTrack());
+            }).catch(() => nextTrack());
+          } else {
+            audio.play().catch(() => nextTrack());
+          }
+        }
+      } else {
+        _stalledTicks = 0;
+      }
+      _lastAudioTime = audio.currentTime;
+    } else if (!State.isPlaying || audio.paused) {
+      // Reset stall counter whenever audio legitimately stops / pauses
+      _stalledTicks = 0;
+      _lastAudioTime = audio.currentTime;
+    }
+
+    // 3) Resume a suspended AudioContext while music should be playing
+    if (audioCtx && audioCtx.state === 'suspended' && State.isPlaying) {
+      audioCtx.resume().catch(() => {});
+    }
+
+    // 4) Keep Media Session playback state in sync
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = State.isPlaying ? 'playing' : 'paused';
+      // Update position state for seekbar on lock screen
+      try {
+        if (audio.duration && !isNaN(audio.duration)) {
+          navigator.mediaSession.setPositionState({
+            duration:     audio.duration,
+            playbackRate: audio.playbackRate,
+            position:     Math.min(audio.currentTime, audio.duration),
+          });
+        }
+      } catch (_) {}
+    }
+  }, 1000);
+}
+
+// =============================================
+//  VISIBILITY CHANGE — resume when tab comes back
+// =============================================
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Resume AudioContext if it was suspended while backgrounded
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    // If audio should be playing but paused (some mobile browsers pause on background)
+    if (State.isPlaying && audio.paused && !audio.ended) {
+      audio.play().catch(() => {});
+    }
+    // If audio has already ended and we haven't advanced (missed the event)
+    if (State.isPlaying && audio.ended) {
+      if (State.repeatMode === 'one') {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else {
+        nextTrack();
+      }
+    }
+  }
 });
 
 // Keyboard shortcuts
@@ -2069,6 +2248,9 @@ async function init() {
   initUser();
   checkMobile();
   switchView('home', document.querySelector('[data-view="home"]'));
+  // Set up OS media controls (lock screen, notification shade) and background watchdog
+  setupMediaSession();
+  startBgWatchdog();
   // Load all home sections in parallel
   await loadHomeSections();
 }

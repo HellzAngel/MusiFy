@@ -34,6 +34,8 @@ const JamendoAPI = (function () {
 
   async function saavnFetch(query, limit) {
     limit = limit || 20;
+    query = query.replace(/__YEAR__/g, new Date().getFullYear());
+    query = query.replace(/__YEAR__/g, new Date().getFullYear());
     const url = BASE + '/result/?query=' + encodeURIComponent(query);
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 14000);
@@ -127,67 +129,90 @@ const JamendoAPI = (function () {
   // Large query pools — random subset is picked each login so featured & new differ every time
   const FEATURED_POOLS = {
     ta: [
-      'top tamil songs 2024', 'best tamil hits', 'popular tamil songs',
+      'top tamil songs __YEAR__', 'best tamil hits', 'popular tamil songs',
       'anirudh hits', 'vijay blockbuster songs', 'harris jayaraj hits',
       'yuvan shankar raja hits', 'ar rahman tamil songs', 'ilayaraja classics',
       'dhanush songs', 'sid sriram tamil', 'thalapathy songs',
-      'tamil melody hits', 'tamil kuthu songs', 'kollywood hits 2024',
+      'tamil melody hits', 'tamil kuthu songs', 'kollywood hits __YEAR__',
       'tamil love songs hits', 'tamil mass songs', 'rajini hit songs',
       'kamal haasan songs', 'tamil folk songs hits'
     ],
     ml: [
-      'top malayalam songs 2024', 'best malayalam hits', 'vineeth sreenivasan songs',
+      'top malayalam songs __YEAR__', 'best malayalam hits', 'vineeth sreenivasan songs',
       'ouseppachan hits', 'gopi sundar songs', 'bijibal hits',
       'sajid yahiya songs', 'shaan rahman songs', 'alphons joseph songs',
-      'mollywood hits 2024', 'malayalam melody songs', 'malayalam love songs',
+      'mollywood hits __YEAR__', 'malayalam melody songs', 'malayalam love songs',
       'mohanlal superhit songs', 'mammootty songs', 'prithviraj songs',
-      'kerala music hits', 'old malayalam songs', 'new malayalam 2024',
+      'kerala music hits', 'old malayalam songs', 'new malayalam __YEAR__',
       'malayalam evergreen hits', 'onam songs malayalam'
     ],
     hi: [
-      'top hindi songs 2024', 'arijit singh hits', 'atif aslam songs',
+      'top hindi songs __YEAR__', 'arijit singh hits', 'atif aslam songs',
       'shreya ghoshal songs', 'sonu nigam hits', 'neha kakkar songs',
       'badshah songs', 'ar rahman hindi songs', 'pritam bollywood hits',
       'amit trivedi songs', 'kk best songs', 'vishal shekhar hits',
-      'hindi love songs 2024', 'bollywood romance hits', 'hindi party songs',
+      'hindi love songs __YEAR__', 'bollywood romance hits', 'hindi party songs',
       'shankar ehsaan loy songs', 'kumar sanu hits', 'lata mangeshkar songs',
-      'kishore kumar hits', 'hindi trending 2024'
+      'kishore kumar hits', 'hindi trending __YEAR__'
     ],
     en: [
-      'top english songs 2024', 'ed sheeran hits', 'the weeknd best songs',
+      'top english songs __YEAR__', 'ed sheeran hits', 'the weeknd best songs',
       'taylor swift songs', 'billie eilish songs', 'post malone hits',
       'adele songs', 'dua lipa songs', 'harry styles songs',
       'coldplay hits', 'imagine dragons songs', 'twenty one pilots songs',
       'charlie puth songs', 'shawn mendes songs', 'ariana grande hits',
-      'english indie hits', 'pop hits 2024', 'english r&b 2024',
+      'english indie hits', 'pop hits __YEAR__', 'english r&b __YEAR__',
       'lewis capaldi songs', 'olivia rodrigo songs'
     ]
   };
 
   const NEW_RELEASE_POOLS = {
     ta: [
-      'new tamil songs 2025', 'latest tamil songs 2025', 'new kollywood songs 2025',
-      'tamil releases 2025', 'new tamil movie songs 2025', 'latest anirudh 2025',
-      'new sid sriram songs 2025', 'latest vijay songs 2025',
-      'fresh tamil songs 2025', 'hot tamil 2025', 'tamil new release 2025'
+      'new tamil songs __YEAR__', 'latest tamil songs __YEAR__', 'new kollywood songs __YEAR__',
+      'tamil releases __YEAR__', 'new tamil movie songs __YEAR__', 'latest anirudh __YEAR__',
+      'new sid sriram songs __YEAR__', 'latest vijay songs __YEAR__',
+      'fresh tamil songs __YEAR__', 'hot tamil __YEAR__', 'tamil new release __YEAR__'
     ],
     ml: [
-      'new malayalam songs 2025', 'latest malayalam songs 2025', 'new mollywood 2025',
-      'kerala new songs 2025', 'new malayalam movie songs 2025', 'malayalam releases 2025',
-      'latest kerala music 2025', 'new vineeth songs 2025', 'fresh malayalam 2025',
-      'new gopi sundar 2025', 'latest mollywood 2025', 'malayalam new release 2025'
+      'new malayalam songs __YEAR__', 'latest malayalam songs __YEAR__', 'new mollywood __YEAR__',
+      'kerala new songs __YEAR__', 'new malayalam movie songs __YEAR__', 'malayalam releases __YEAR__',
+      'latest kerala music __YEAR__', 'new vineeth songs __YEAR__', 'fresh malayalam __YEAR__',
+      'new gopi sundar __YEAR__', 'latest mollywood __YEAR__', 'malayalam new release __YEAR__'
     ],
     hi: [
-      'new hindi songs 2025', 'latest bollywood 2025', 'new hindi releases 2025',
-      'fresh bollywood 2025', 'new hindi movie songs 2025', 'latest arijit 2025',
-      'hindi new singles 2025', 'bollywood new songs 2025', 'latest hindi music 2025',
-      'fresh hindi 2025', 'hindi releases 2025', 'new bollywood 2025'
+      'new hindi songs __YEAR__', 'latest bollywood __YEAR__', 'new hindi releases __YEAR__',
+      'fresh bollywood __YEAR__', 'new hindi movie songs __YEAR__', 'latest arijit __YEAR__',
+      'hindi new singles __YEAR__', 'bollywood new songs __YEAR__', 'latest hindi music __YEAR__',
+      'fresh hindi __YEAR__', 'hindi releases __YEAR__', 'new bollywood __YEAR__'
     ],
     en: [
-      'new english songs 2025', 'latest pop songs 2025', 'new releases 2025',
-      'fresh pop 2025', 'new english singles 2025', 'top new songs 2025',
-      'latest music 2025', 'new pop hits 2025', 'newest songs 2025',
-      'fresh english 2025', 'new pop release 2025', 'english new release 2025'
+      'new english songs __YEAR__', 'latest pop songs __YEAR__', 'new releases __YEAR__',
+      'fresh pop __YEAR__', 'new english singles __YEAR__', 'top new songs __YEAR__',
+      'latest music __YEAR__', 'new pop hits __YEAR__', 'newest songs __YEAR__',
+      'fresh english __YEAR__', 'new pop release __YEAR__', 'english new release __YEAR__'
+    ]
+  };
+
+  const TRENDING_POOLS = {
+    ta: [
+      'trending tamil __YEAR__', 'viral tamil songs', 'top tamil charts',
+      'tamil trending hits', 'most played tamil songs', 'tamil viral __YEAR__',
+      'current tamil hits', 'tamil trending audio'
+    ],
+    ml: [
+      'trending malayalam __YEAR__', 'viral malayalam songs', 'top malayalam charts',
+      'malayalam trending hits', 'most played malayalam songs', 'mollywood viral __YEAR__',
+      'current malayalam hits', 'kerala trending songs'
+    ],
+    hi: [
+      'trending hindi __YEAR__', 'viral bollywood songs', 'top hindi charts',
+      'hindi trending hits', 'most played hindi songs', 'bollywood viral __YEAR__',
+      'current hindi hits', 'hindi trending audio'
+    ],
+    en: [
+      'trending english songs __YEAR__', 'viral pop songs', 'top global charts',
+      'english trending hits', 'most played english songs', 'tiktok viral songs __YEAR__',
+      'current pop hits', 'global trending audio'
     ]
   };
 
@@ -207,11 +232,15 @@ const JamendoAPI = (function () {
   }
 
   async function getTrending(limit) {
-    const tracks = await fetchAll([
-      'trending tamil 2025', 'top malayalam 2025',
-      'trending hindi 2025', 'trending english songs 2025'
-    ], limit);
-    return tracks || getDemoTracks();
+    // Pick fresh random queries each call so the list differs each login
+    const queries = [
+      ...pickRandom(TRENDING_POOLS.ta, 2),
+      ...pickRandom(TRENDING_POOLS.ml, 2),
+      ...pickRandom(TRENDING_POOLS.hi, 2),
+      ...pickRandom(TRENDING_POOLS.en, 2),
+    ];
+    const tracks = await fetchAll(queries, limit);
+    return tracks ? tracks.sort(() => Math.random() - 0.5) : getDemoTracks();
   }
 
   async function getNewReleases(limit) {
@@ -238,9 +267,9 @@ const JamendoAPI = (function () {
         q + ' latest songs',
         q + ' top songs',
         q + ' all songs',
-        q + ' 2025',
-        q + ' 2024',
+        q + ' __YEAR__',
         q + ' 2023',
+        q + ' 2022',
         q + ' romantic songs',
         q + ' sad songs',
         q + ' love songs',
@@ -252,13 +281,26 @@ const JamendoAPI = (function () {
         q + ' blockbuster songs',
         q + ' film songs',
         q + ' evergreen songs',
+        'feat ' + q,
+        q + ' feat',
+        'singer ' + q,
+        'music by ' + q,
+        'composed by ' + q,
+        q + ' duet',
+        q + ' combinations',
+        q + ' new songs',
+        q + ' old songs',
+        q + ' melody hits',
+        q + ' dance hits',
+        q + ' background score',
+        q + ' bgm'
       ];
     } else if (type === 'album') {
       queries = [
         q + ' album', q + ' album songs', q + ' full album',
         q, q + ' songs', q + ' hits',
-        q + ' audio', q + ' jukebox', q + ' 2024',
-        q + ' 2025', q + ' full', q + ' soundtrack',
+        q + ' audio', q + ' jukebox', q + ' __YEAR__',
+        q + ' __YEAR__', q + ' full', q + ' soundtrack',
         q + ' all songs', q + ' ost',
       ];
     } else if (type === 'film') {
@@ -273,10 +315,10 @@ const JamendoAPI = (function () {
       // default: song search — many diverse queries to beat the per-query API cap
       queries = [
         q, q + ' songs', q + ' hits',
-        q + ' latest', q + ' 2025', q + ' best',
+        q + ' latest', q + ' __YEAR__', q + ' best',
         q + ' audio', q + ' official', q + ' full song',
         q + ' hd', q + ' lyrics', q + ' mix',
-        q + ' 2024', q + ' playlist',
+        q + ' __YEAR__', q + ' playlist',
       ];
     }
     try {
@@ -297,26 +339,26 @@ const JamendoAPI = (function () {
   async function getByLanguage(lang, limit) {
     const queryMap = {
       ta: [
-        'top tamil songs 2025', 'best tamil hits', 'popular tamil songs',
-        'new tamil songs 2025', 'tamil blockbuster songs', 'tamil love songs',
+        'top tamil songs __YEAR__', 'best tamil hits', 'popular tamil songs',
+        'new tamil songs __YEAR__', 'tamil blockbuster songs', 'tamil love songs',
         'tamil mass songs', 'tamil melody songs', 'anirudh songs',
         'vijay sethupathi tamil songs'
       ],
       ml: [
-        'top malayalam songs 2025', 'best malayalam hits', 'popular malayalam songs',
-        'new malayalam songs 2025', 'malayalam love songs', 'vineeth sreenivasan songs',
+        'top malayalam songs __YEAR__', 'best malayalam hits', 'popular malayalam songs',
+        'new malayalam songs __YEAR__', 'malayalam love songs', 'vineeth sreenivasan songs',
         'sid sriram malayalam', 'malayalam melody songs', 'ouseppachan hits',
         'malayalam blockbuster songs'
       ],
       hi: [
-        'top hindi songs 2025', 'best hindi hits', 'popular hindi songs',
-        'new hindi songs 2025', 'arijit singh songs', 'atif aslam songs',
-        'hindi love songs', 'bollywood hits 2024', 'hindi trending songs',
+        'top hindi songs __YEAR__', 'best hindi hits', 'popular hindi songs',
+        'new hindi songs __YEAR__', 'arijit singh songs', 'atif aslam songs',
+        'hindi love songs', 'bollywood hits __YEAR__', 'hindi trending songs',
         'rahman hindi songs'
       ],
       en: [
-        'top english songs 2025', 'best english hits', 'popular english songs',
-        'new english songs 2025', 'top pop songs 2025', 'ed sheeran songs',
+        'top english songs __YEAR__', 'best english hits', 'popular english songs',
+        'new english songs __YEAR__', 'top pop songs __YEAR__', 'ed sheeran songs',
         'the weeknd songs', 'taylor swift songs', 'english love songs',
         'trending english songs'
       ]
@@ -337,8 +379,8 @@ const JamendoAPI = (function () {
   async function getMoreTracks(type) {
     const map = {
       featured: ['tamil blockbuster songs',  'malayalam blockbuster songs', 'hindi blockbuster songs', 'english hits'],
-      trending:  ['trending tamil 2025',      'trending malayalam 2025',      'trending hindi 2025',    'trending english 2025'],
-      new:       ['latest tamil songs 2025',  'latest malayalam songs 2025',  'latest hindi songs 2025','latest english songs 2025']
+      trending:  [...pickRandom(TRENDING_POOLS.ta, 1), ...pickRandom(TRENDING_POOLS.ml, 1), ...pickRandom(TRENDING_POOLS.hi, 1), ...pickRandom(TRENDING_POOLS.en, 1)],
+      new:       ['latest tamil songs __YEAR__',  'latest malayalam songs __YEAR__',  'latest hindi songs __YEAR__','latest english songs __YEAR__']
     };
     const queries = map[type] || map.featured;
     const tracks = await fetchAll(queries);
@@ -356,17 +398,17 @@ const JamendoAPI = (function () {
       `${artist} songs`,
       `${artist} hits`,
       `${artist} best songs`,
-      `${artist} 2024`,
-      `${artist} 2025`,
+      `${artist} __YEAR__`,
+      `${artist} __YEAR__`,
       `best ${langName} songs`,
       `${langName} hits`,
-      `${langName} trending 2025`,
+      `${langName} trending __YEAR__`,
       `popular ${langName} music`,
       `${langName} melody songs`,
       `${langName} superhit songs`,
       `${langName} love songs`,
       `${langName} blockbuster songs`,
-      `top ${langName} 2025`,
+      `top ${langName} __YEAR__`,
     ];
     if (track.genre) base.push(`${langName} ${track.genre}`);
 
