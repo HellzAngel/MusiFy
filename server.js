@@ -12,9 +12,10 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '')));
 
 // Database Setup
-const db = new sqlite3.Database('./database.sqlite', (err) => {
+const dbPath = process.env.DB_PATH || './database.sqlite';
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) console.error('[DB] Connection error:', err.message);
-  else console.log('[DB] Connected to SQLite database.');
+  else console.log(`[DB] Connected to SQLite database at ${dbPath}`);
 });
 
 db.serialize(() => {
