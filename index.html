@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>MusiFy — Login</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#06040f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -475,6 +480,20 @@
       100% { background-position: 200% center; }
     }
 
+    .animated-eq rect {
+      transform-origin: bottom;
+      animation: eq-bounce 1s ease-in-out infinite alternate;
+    }
+    .animated-eq rect:nth-child(1) { animation-delay: 0.1s; animation-duration: 0.8s; }
+    .animated-eq rect:nth-child(2) { animation-delay: 0.3s; animation-duration: 1.1s; }
+    .animated-eq rect:nth-child(3) { animation-delay: 0.0s; animation-duration: 0.9s; }
+    .animated-eq rect:nth-child(4) { animation-delay: 0.2s; animation-duration: 1.2s; }
+
+    @keyframes eq-bounce {
+      0%   { transform: scaleY(0.3); }
+      100% { transform: scaleY(1.0); }
+    }
+
     /* EQ bars */
     .ls-bars {
       display: flex;
@@ -539,7 +558,12 @@
       <!-- logo mark -->
       <div class="ls-logo">
         <div class="ls-logo-icon">
-          <i class="fas fa-headphones"></i>
+          <svg viewBox="0 0 24 24" class="animated-eq" style="width: 32px; height: 32px; fill: white;">
+            <rect x="2" y="10" width="3" height="12" rx="1.5" />
+            <rect x="7" y="4" width="3" height="18" rx="1.5" />
+            <rect x="12" y="14" width="3" height="8" rx="1.5" />
+            <rect x="17" y="8" width="3" height="14" rx="1.5" />
+          </svg>
         </div>
         <span class="ls-logo-text">MusiFy</span>
       </div>
@@ -776,6 +800,22 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    // ---- PWA Registration & Persistence ----
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[PWA] ServiceWorker registered:', reg.scope);
+        }).catch(err => {
+          console.log('[PWA] ServiceWorker registration failed:', err);
+        });
+      });
+    }
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        console.log('[PWA] Persistent storage granted:', granted);
+      });
+    }
+
     // ---- Animation ----
     const clock = new THREE.Clock();
 
@@ -853,22 +893,7 @@
   //  LOGIN LOGIC
   // =============================================
 
-  // Passwords stored as SHA-256 hashes only — plaintext never in source
-  const USERS = {
-    surya:   { ph: '34a12809061e749271ae972328cd38bdd7fe3fc83bcfd5fc922e01dd1c3ba376', name: 'Surya',   avatar: 'S', color: '#8b5cf6' },
-    ananthu: { ph: '77cce19facdc944ca9e5418413862881a33c731ed33f67ff254699f1b9570c77', name: 'Ananthu', avatar: 'A', color: '#22d3ee' },
-    devika:  { ph: 'c99bc6f668e8999a380975a9be485150f91070498f11f5bf0d56f67eb0f68930', name: 'Devika',  avatar: 'D', color: '#f472b6' },
-    sonu:    { ph: '65799f51379727f9a584975c238568cd1c570ef0873c10f3d5a546fcbe6073f3', name: 'Sonu',    avatar: 'S', color: '#34d399' },
-    bromin:  { ph: '080b9643325aeb8de8c556420ab27403c28a13ef5a8d40d8fec0bf9adada73a8', name: 'Bromin',  avatar: 'B', color: '#f97316' },
-    arjun:   { ph: '26a95b1e69c92f1cfb0381fd379d80526ecd9c368d3a7baa9be6c24b61a25e71', name: 'Arjun',   avatar: 'A', color: '#ef4444' },
-    deva:    { ph: '55ac2b3161e9c9e2ecb04869ae5e4d6b372f6f1733fede2a06738af09a761c59', name: 'Deva',    avatar: 'D', color: '#a855f7' },
-    amal:    { ph: '24bb9a41fcc4b3db6a3450ed9171b8c23ee9b494659f6ebfb697b30ea83d1fac', name: 'Amal',    avatar: 'A', color: '#10b981' },
-    sounder: { ph: 'c8d22056fcdcff4bc5dd5bee816553dc939adc6ac0d68d9fff05c9d8c9cf9338', name: 'Sounder', avatar: 'S', color: '#fb923c' },
-    zlatan:  { ph: 'a07c9be3cf72583e2829199730b483412c4280ce3fb210bc99237671447780d4', name: 'Zlatan',  avatar: 'Z', color: '#38bdf8' },
-    athu:    { ph: 'ae20f98677a4659ee2e6a1e7a85176cc17ae4574d0ba6c81072ea2e4a161b5cb', name: 'Athu',    avatar: 'A', color: '#4ade80' },
-    mahesh:  { ph: 'b7dafc766296428c56acaf95031aa8e644b667bc3a8358251613d9b2fbd16fa7', name: 'Mahesh',  avatar: 'M', color: '#f59e0b' },
-    abhilash:{ ph: 'bd39d425737af9e02ee8dbe2ebc9cf6385340c9f8b90fd0b41eac30f98ac433e', name: 'Abhilash', avatar: 'A', color: '#6366f1' }
-  };
+
 
   // Remove loading screen from DOM after 4 s (CSS fades it at 3.5 s)
   setTimeout(() => {
@@ -936,42 +961,52 @@
 
     loginBtn.classList.add('loading');
 
-    const user = USERS[username];
-    if (!user) {
-      loginBtn.classList.remove('loading');
-      showError('User not found.');
-      return;
+    // Hash the password on the client to match the seed data securely
+    async function sha256(msg) {
+      const data = new TextEncoder().encode(msg);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
-
     const inputHash = await sha256(password);
-    if (inputHash !== user.ph) {
+
+    try {
+      const res = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, passwordHash: inputHash })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        showError(data.error || 'Invalid username or password');
+        loginBtn.classList.remove('loading');
+        return;
+      }
+
+      // Success — store session & redirect
+      sessionStorage.setItem('musify_session', JSON.stringify({
+        username: data.user.username,
+        name: data.user.name,
+        avatar: data.user.avatar,
+        color: data.user.color,
+        loginTime: Date.now()
+      }));
+
+      // Animate out and redirect
+      document.querySelector('.right-panel').style.transition = 'all 0.5s ease';
+      document.querySelector('.right-panel').style.transform = 'translateX(40px)';
+      document.querySelector('.right-panel').style.opacity = '0';
+
+      setTimeout(() => {
+        window.location.replace('player.html');
+      }, 600);
+
+    } catch (err) {
+      showError('Could not connect to server.');
       loginBtn.classList.remove('loading');
-      showError('Incorrect password. Please try again.');
-      return;
     }
-
-    // Success — store session & redirect
-    const existing = JSON.parse(localStorage.getItem('musify_users') || '{}');
-    if (!existing[username]) existing[username] = { favorites: [] };
-    localStorage.setItem('musify_users', JSON.stringify(existing));
-    sessionStorage.setItem('musify_session', JSON.stringify({
-      username,
-      name: user.name,
-      avatar: user.avatar,
-      color: user.color,
-      loginTime: Date.now()
-    }));
-
-    // Animate out and redirect
-    document.querySelector('.right-panel').style.transition = 'all 0.5s ease';
-    document.querySelector('.right-panel').style.transform = 'translateX(40px)';
-    document.querySelector('.right-panel').style.opacity = '0';
-    document.querySelector('.left-panel') && (document.querySelector('.left-panel').style.transition = 'opacity 0.5s ease');
-    document.querySelector('.left-panel') && (document.querySelector('.left-panel').style.opacity = '0');
-
-    setTimeout(() => {
-      window.location.replace('player.html');
-    }, 600);
   });
   </script>
 </body>

@@ -419,48 +419,45 @@ function initUser() {
   document.getElementById('ddName').textContent = name || '—';
   document.getElementById('ddUser').textContent = username || '—';
 
-  // Ensure user entry exists in storage without overwriting existing favorites
+  // Sync favorites from backend instead of local storage
   if (username) {
-    try {
-      const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
-      if (!stored[username]) {
-        stored[username] = { favorites: [] };
-        localStorage.setItem('musify_users', JSON.stringify(stored));
-      }
-      State.users = stored;
-    } catch (e) { /* silent */ }
+    if (!State.users) State.users = {};
+    if (!State.users[username]) State.users[username] = { favorites: [] };
+
+    fetch(`http://localhost:3000/api/favorites?username=${username}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.favorites) {
+          State.users[username].favorites = data.favorites;
+          // Refresh views if they are already open
+          if (State.currentView === 'favorites') renderFavorites();
+        }
+      })
+      .catch(e => console.error('[Backend] Could not load favorites:', e));
   }
 }
 
 function getFavorites() {
   const { username } = State.session;
   if (!username) return [];
-  // Always read from localStorage so we never return a stale in-memory copy
-  try {
-    const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
-    // Keep in-memory State.users in sync
-    State.users = stored;
-    return (stored[username] && Array.isArray(stored[username].favorites))
-      ? stored[username].favorites
-      : [];
-  } catch { return []; }
+  return (State.users && State.users[username] && Array.isArray(State.users[username].favorites))
+    ? State.users[username].favorites
+    : [];
 }
 
 function saveFavorites(favs) {
   const { username } = State.session;
   if (!username) return;
-  // Always read fresh from localStorage before writing to avoid clobbering
-  // another tab's changes or a stale in-memory copy
-  try {
-    const stored = JSON.parse(localStorage.getItem('musify_users') || '{}');
-    if (!stored[username]) stored[username] = {};
-    stored[username].favorites = favs;
-    localStorage.setItem('musify_users', JSON.stringify(stored));
-    // Keep in-memory copy in sync
-    State.users = stored;
-  } catch (e) {
-    console.error('[MusiFy] Could not save favorites:', e);
-  }
+
+  if (!State.users[username]) State.users[username] = {};
+  State.users[username].favorites = favs;
+
+  // Persist to backend database
+  fetch('http://localhost:3000/api/favorites', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, favorites: favs })
+  }).catch(e => console.error('[Backend] Could not save favorites:', e));
 }
 
 function isFavorited(trackId) {

@@ -7,6 +7,11 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>MusiFy — Player</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#06040f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -89,8 +94,15 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <div class="logo-icon"><i class="fas fa-headphones"></i></div>
-        <span class="logo-text">MusiFy</span>
+        <div class="logo-icon-svg">
+          <svg viewBox="0 0 24 24" class="animated-eq">
+            <rect x="2" y="10" width="3" height="12" rx="1.5" />
+            <rect x="7" y="4" width="3" height="18" rx="1.5" />
+            <rect x="12" y="14" width="3" height="8" rx="1.5" />
+            <rect x="17" y="8" width="3" height="14" rx="1.5" />
+          </svg>
+        </div>
+        <span class="logo-text effect-gradient">MusiFy</span>
       </div>
       <nav class="sidebar-nav">
         <span class="nav-label">Menu</span>
@@ -795,6 +807,22 @@
         animate();
       });
     })();
+
+    // ---- PWA Registration & Persistence ----
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          console.log('[PWA] ServiceWorker registered:', reg.scope);
+        }).catch(err => {
+          console.log('[PWA] ServiceWorker registration failed:', err);
+        });
+      });
+    }
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        console.log('[PWA] Persistent storage granted:', granted);
+      });
+    }
   </script>
 
 </body>

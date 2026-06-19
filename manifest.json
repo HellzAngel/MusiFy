@@ -1,0 +1,22 @@
+{
+  "name": "MusiFy",
+  "short_name": "MusiFy",
+  "description": "Your music, every language.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#06040f",
+  "theme_color": "#06040f",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ]
+}
