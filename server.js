@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,11 @@ app.use(express.static(path.join(__dirname, '')));
 
 // Database Setup
 const dbPath = process.env.DB_PATH || './database.sqlite';
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) console.error('[DB] Connection error:', err.message);
   else console.log(`[DB] Connected to SQLite database at ${dbPath}`);
